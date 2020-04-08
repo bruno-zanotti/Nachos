@@ -1,0 +1,3 @@
+[submodule "code/tests/assignments/solutions"]
+	path = code/tests/assignments/solutions
+	url = https://git.dcc.fceia.unr.edu.ar/so2/nachos-solutions

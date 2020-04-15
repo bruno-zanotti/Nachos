@@ -70,7 +70,12 @@ Scheduler::ReadyToRun(Thread *thread)
 Thread *
 Scheduler::FindNextToRun()
 {
-    return readyList->Pop();
+    // Plancha 2 - Ejercicio 3
+    for (int i = MAX_PRIORITY; i >= 0; i--) {
+        if (!(readyList[i] -> IsEmpty()))
+            return readyList[i] -> Pop();
+    }
+    return NULL;
 }
 
 /// Dispatch the CPU to `nextThread`.

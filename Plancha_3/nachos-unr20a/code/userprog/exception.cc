@@ -26,9 +26,13 @@
 #include "syscall.h"
 #include "filesys/directory_entry.hh"
 #include "threads/system.hh"
+// Plancha 3 - Ejercicio 2
+#include "filesys/file_system.hh"
 
 #include <stdio.h>
 
+// Plancha 3 - Ejercicio 2
+#define INIT_FILE_SIZE 10
 
 static void
 IncrementPC()
@@ -80,7 +84,11 @@ DefaultHandler(ExceptionType et)
 static void
 SyscallHandler(ExceptionType _et)
 {
-    int scid = machine->ReadRegister(2);
+    int scid = machine->ReadRegister(2), i;
+    // Plancha 3 - Ejercicio 2
+    char buffer[512];
+    for(int lu=0;lu<512;lu++)
+        buffer[lu]=0;
 
     switch (scid) {
 
@@ -88,6 +96,27 @@ SyscallHandler(ExceptionType _et)
             DEBUG('e', "Shutdown, initiated by user program.\n");
             interrupt->Halt();
             break;
+
+        // Plancha 3 - Ejercicio 2
+        case SC_EXIT: {
+            // Read Exit Status
+            int s = machine->ReadRegister(4);
+            DEBUG('e', "Program exited with '%u' status.\n",s);
+            currentThread->Finish();
+            break;
+        }
+
+        // Plancha 3 - Ejercicio 2
+        case SC_EXEC: {
+            
+            break;
+        }
+
+        // Plancha 3 - Ejercicio 2
+        case SC_JOIN: {
+            
+            break;
+        }
 
         case SC_CREATE: {
             int filenameAddr = machine->ReadRegister(4);
@@ -99,13 +128,114 @@ SyscallHandler(ExceptionType _et)
                 DEBUG('e', "Error: filename string too long (maximum is %u bytes).\n",
                       FILE_NAME_MAX_LEN);
 
+            // Plancha 3 - Ejercicio 2
+            DEBUG('e', "Open requested for file `%s`.\n", filename); 
+            fileSystem -> Create(filename,INIT_FILE_SIZE);
+
             DEBUG('e', "`Create` requested for file `%s`.\n", filename);
+            DEBUG('f',"%s created\n",filename);
+            break;
+        }
+
+        // Plancha 3 - Ejercicio 2
+        case SC_REMOVE: {
+            int filenameAddr = machine->ReadRegister(4);
+            if (filenameAddr == 0)
+                DEBUG('a', "Error: address to filename string is null.\n");
+
+            char filename[FILE_NAME_MAX_LEN + 1];
+            if (!ReadStringFromUser(filenameAddr, filename, sizeof filename))
+                DEBUG('a', "Error: filename string too long (maximum is %u bytes).\n",
+                      FILE_NAME_MAX_LEN);
+
+            fileSystem -> Remove(filename);
+            DEBUG('f',"%s removed\n",filename);
+
+            break;
+        }
+
+        // Plancha 3 - Ejercicio 2
+        case SC_OPEN: {
+            int filenameAddr = machine->ReadRegister(4);
+            if (filenameAddr == 0)
+                DEBUG('a', "Error: address to filename string is null.\n");
+
+            char filename[FILE_NAME_MAX_LEN + 1];
+            if (!ReadStringFromUser(filenameAddr, filename, sizeof filename))
+                DEBUG('a', "Error: filename string too long (maximum is %u bytes).\n",
+                      FILE_NAME_MAX_LEN);
+            DEBUG('a', "Open requested for file `%s`.\n", filename);
+
+            OpenFile *file = fileSystem -> Open(filename);
+            int fid = filesTable -> Add(file);
+
+            DEBUG('f',"%s opened for id %u.\n",filename,fid);
+
+            machine -> WriteRegister(2, fid); 
             break;
         }
 
         case SC_CLOSE: {
-            int fid = machine->ReadRegister(4);
+            
+            // Plancha 3 - Ejercicio 2
+            OpenFileId fid = machine -> ReadRegister(4);
             DEBUG('e', "`Close` requested for id %u.\n", fid);
+            filesTable -> Remove(fid);
+            DEBUG('f', "%u closed.\n", fid);
+            break;
+        }
+
+        // Plancha 3 - Ejercicio 2
+        case SC_READ: {
+            int addr = machine -> ReadRegister(4);
+            int size = machine -> ReadRegister(5);
+            OpenFileId fid = machine -> ReadRegister(6);
+            
+            //ASSERT(addr != NULL);
+            ASSERT(size > 0);
+
+            if (fid == CONSOLE_INPUT)
+            {
+                for (i = 0; i < size ; i++)
+                    buffer[i] = synchConsole -> GetChar();       
+                WriteBufferToUser(buffer, addr, size);
+                DEBUG('f', "Read %s from Console.\n", buffer);
+
+            }
+            else {
+                OpenFile *file = filesTable -> Get(fid);
+                i = file -> ReadAt(buffer,size,0);
+                WriteBufferToUser(buffer, addr, size);
+                DEBUG('f', "Read '%u' bytes from %u: '%s'.\n",i,fid, buffer);
+
+            }
+
+            machine -> WriteRegister(2, i); 
+            break;
+        }        
+
+        // Plancha 3 - Ejercicio 2
+        case SC_WRITE: {
+            int addr = machine -> ReadRegister(4);
+            int size = machine -> ReadRegister(5);
+            OpenFileId fid = machine -> ReadRegister(6);
+
+            //ASSERT(addr != NULL);
+            ASSERT(size > 0);
+
+            ReadBufferFromUser(addr, buffer, size);
+
+            if (fid == CONSOLE_OUTPUT)
+            {
+                DEBUG('f', "Write '%s' in shell from %u.\n", buffer,fid); 
+                for (i = 0; i < size && buffer[i] != '\0'; i++)
+                    synchConsole -> PutChar(buffer[i]);       
+            }
+            else {
+                OpenFile *file = filesTable -> Get(fid);
+                i = file -> Write(buffer,size);
+                DEBUG('f', "Write '%s' from %u.\n", buffer,fid);            }
+            
             break;
         }
 

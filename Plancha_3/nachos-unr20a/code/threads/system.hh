@@ -35,7 +35,15 @@ extern Timer *timer;                 ///< The hardware alarm clock.
 
 #ifdef USER_PROGRAM
 #include "machine/machine.hh"
-extern Machine *machine;  // User program memory and registers.
+// Plancha 3 - Ejercicio 3
+#include "userprog/synch_console.hh"
+#include "lib/bitmap.hh"
+#include "lib/table.hh"
+#include "filesys/open_file.hh"
+extern Machine *machine;  			// User program memory and registers.
+extern SynchConsole *synchConsole;  // User program console.
+extern Bitmap *mapTable;
+extern Table <OpenFile*> *filesTable;
 #endif
 
 #ifdef FILESYS_NEEDED  // *FILESYS* or *FILESYS_STUB*.

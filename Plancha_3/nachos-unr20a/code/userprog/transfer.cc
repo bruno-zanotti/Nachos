@@ -7,11 +7,20 @@
 #include "lib/utility.hh"
 #include "threads/system.hh"
 
-
+// Plancha 3 - Ejercicio 1
 void ReadBufferFromUser(int userAddress, char *outBuffer,
                         unsigned byteCount)
 {
-    // TODO: implement.
+    ASSERT(userAddress != 0);
+    ASSERT(outBuffer != nullptr);
+    ASSERT(byteCount != 0);
+    //DEBUG("Trying to read buffer from user");
+
+    int temp;
+    for(unsigned i = 0; i < byteCount; i++){
+        ASSERT (machine -> ReadMem(userAddress++, 1, &temp));
+        outBuffer[i] = (unsigned char) temp;
+    }
 }
 
 bool ReadStringFromUser(int userAddress, char *outString,
@@ -32,13 +41,25 @@ bool ReadStringFromUser(int userAddress, char *outString,
     return *(outString - 1) == '\0';
 }
 
+// Plancha 3 - Ejercicio 1
 void WriteBufferToUser(const char *buffer, int userAddress,
                        unsigned byteCount)
 {
-    // TODO: implement.
+    ASSERT(userAddress != 0);
+    ASSERT(buffer != nullptr);
+    ASSERT(byteCount != 0);
+    //DEBUG("Trying to write buffer from user");
+
+    for(unsigned i = 0; i < byteCount; i++)
+        ASSERT (machine -> WriteMem(userAddress++, 1, buffer[i]));
 }
 
+// Plancha 3 - Ejercicio 1
 void WriteStringToUser(const char *string, int userAddress)
 {
-    // TODO: implement.
+    ASSERT(userAddress != 0);
+    ASSERT(string != nullptr);
+
+    for (int i = 0; string[i] != '\0'; i++)
+        ASSERT(machine -> WriteMem(userAddress++, 1, string[i]));
 }

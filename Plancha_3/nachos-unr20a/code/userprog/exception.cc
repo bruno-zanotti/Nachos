@@ -28,6 +28,7 @@
 #include "threads/system.hh"
 // Plancha 3 - Ejercicio 2
 #include "filesys/file_system.hh"
+#include "address_space.hh"
 
 #include <stdio.h>
 
@@ -102,13 +103,45 @@ SyscallHandler(ExceptionType _et)
             // Read Exit Status
             int s = machine->ReadRegister(4);
             DEBUG('e', "Program exited with '%u' status.\n",s);
-            currentThread->Finish();
+            currentThread->Finish(s);
             break;
         }
 
         // Plancha 3 - Ejercicio 2
         case SC_EXEC: {
+            int filenameAddr = machine->ReadRegister(4);
             
+            char filename[FILE_NAME_MAX_LEN + 1];
+            if (!ReadStringFromUser(filenameAddr, filename, sizeof filename))
+                DEBUG('a', "Error: filename string too long (maximum is %u bytes).\n",
+                      FILE_NAME_MAX_LEN);
+            
+            /// TODO: ver si es necesario
+            ASSERT(filename != nullptr);
+
+            // currentThread.joinable = true;
+            // Thread new_thread = new ()
+
+            OpenFile *executable = fileSystem->Open(filename);
+            if (executable == nullptr) {
+                printf("Unable to open file %s\n", filename);
+                return;
+            }
+
+            AddressSpace *space = new AddressSpace(executable);
+            currentThread->space = space;
+
+            delete executable;
+
+            space->InitRegisters();  // Set the initial register values.
+            space->RestoreState();   // Load page table register.
+
+            DEBUG('e', "Program: '%s' execution starting.\n",filename);
+
+            machine->Run();  // Jump to the user progam.
+
+            // exits by doing the system call `Exit`.
+            DEBUG('e', "Program: '%s' execution finished.\n",filename);
             break;
         }
 

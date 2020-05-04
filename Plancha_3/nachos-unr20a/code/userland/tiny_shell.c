@@ -22,6 +22,7 @@ main(void)
 
         if (i > 0) {
             newProc = Exec(buffer);
+            Write("Hello world\n",12,1);
             Join(newProc);
         }
     }

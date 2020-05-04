@@ -167,8 +167,10 @@ Thread::Print() const
 ///
 /// NOTE: we disable interrupts, so that we do not get a time slice between
 /// setting `threadToBeDestroyed`, and going to sleep.
+
+/// Plancha 3 - Ejercicio 2  
 void
-Thread::Finish()
+Thread::Finish(int exitStatus)
 {
     interrupt->SetLevel(INT_OFF);
     ASSERT(this == currentThread);
@@ -178,7 +180,7 @@ Thread::Finish()
     // Plancha 2 - Ejercicio 3
     // If it's joinable, then send a 1 to his parent.
     if(joinable)
-        channel -> Send(1);
+        channel -> Send(exitStatus);
 
     threadToBeDestroyed = currentThread;
     Sleep();  // Invokes `SWITCH`.

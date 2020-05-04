@@ -17,8 +17,8 @@
 
 /// Miscellaneous useful routines.
 
-//#define min(a, b)  (((a) < (b)) ? (a) : (b))
-//#define max(a, b)  (((a) > (b)) ? (a) : (b))
+#define min(a, b)  (((a) < (b)) ? (a) : (b))
+#define max(a, b)  (((a) > (b)) ? (a) : (b))
 
 /// Typedef for host memory references, expressed in numerical (integer)
 /// form.

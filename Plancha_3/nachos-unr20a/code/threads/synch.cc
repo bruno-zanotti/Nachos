@@ -217,7 +217,7 @@ Condition::Broadcast()
 Channel::Channel(const char *debugName)
 {
     name  = debugName;
-    buffer = NULL;
+    buffer = 0;
     bufferEmpty = true;
     lock = new Lock("Channel-lock");
     senders = new Condition ("senders-list",lock);
@@ -248,11 +248,15 @@ Channel::Send(int message)
     while(!bufferEmpty)     // if the buffer isn't empty
         senders -> Wait();  // the senders wait
         
-    DEBUG('s', "Thread: %s sends  %d\n", currentThread -> GetName(), message);
+    DEBUG('s', "Thread: %s sends %d\n", currentThread -> GetName(), message);
 
-    *buffer = message;      // "send" the message
+    buffer = message;      // "send" the message
     bufferEmpty = false;    // now the buffer isn't empty
     receivers -> Signal();  // send a signal to a receiver
+    
+    while(! bufferEmpty)
+        senders -> Wait(); // Esperar que alguien tome algun mensaje
+    DEBUG('s', "SE ROMPE 1");
     
     lock -> Release();     
 }
@@ -266,9 +270,9 @@ Channel::Receive(int *message)
     while(bufferEmpty)          // if the buffer is empty
         receivers -> Wait();    // the receivers wait
     
-    DEBUG('s', "Thread: %s receives %d\n", currentThread -> GetName(), message);
     
-    message = buffer;           // "receive" the message
+    *message = buffer;          // "receive" the message
+    DEBUG('s', "Thread: %s receives %d\n", currentThread -> GetName(), *message);
     bufferEmpty = true;         // now the buffer is empty
     senders -> Signal();        // comunication finished, call a new sender.
     

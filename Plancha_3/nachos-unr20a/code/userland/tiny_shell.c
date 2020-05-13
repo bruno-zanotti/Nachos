@@ -21,8 +21,9 @@ main(void)
         buffer[--i] = '\0';
 
         if (i > 0) {
+            Write(buffer,i,1);    
             newProc = Exec(buffer);
-            Write("Hello world\n",12,1);
+            // Write("Hello world\n",12,1);
             Join(newProc);
         }
     }

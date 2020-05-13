@@ -41,15 +41,15 @@ IsThreadStatus(ThreadStatus s)
 ///
 /// * `threadName` is an arbitrary string, useful for debugging.
 /// Plancha 2 - Ejercicio 3-4
-Thread::Thread(const char *threadName, bool IsJoinable, int threadPriority)
+Thread::Thread(const char *threadName, bool isJoinable, int threadPriority)
 {
     name     = threadName;
     stackTop = nullptr;
     stack    = nullptr;
     status   = JUST_CREATED;
-
     /// Plancha 2 - Ejercicio 3
-    joinable = IsJoinable;
+    joinable = isJoinable;
+
     if (joinable)
         channel = new Channel("join-channel");
     else
@@ -79,6 +79,8 @@ Thread::~Thread()
     if (stack != nullptr)
         SystemDep::DeallocBoundedArray((char *) stack,
                                        STACK_SIZE * sizeof *stack);
+    if (joinable)
+        delete channel;
 }
 
 /// Invoke `(*func)(arg)`, allowing caller and callee to execute
@@ -181,6 +183,7 @@ Thread::Finish(int exitStatus)
     // If it's joinable, then send a 1 to his parent.
     if(joinable)
         channel -> Send(exitStatus);
+    DEBUG('t', "Finishing thread \"%s\" ya mando el send\n", GetName());
 
     threadToBeDestroyed = currentThread;
     Sleep();  // Invokes `SWITCH`.
@@ -188,7 +191,7 @@ Thread::Finish(int exitStatus)
 }
 
 /// Plancha 2 - Ejercicio 3  
-void 
+int 
 Thread::Join()
 {
     ASSERT(joinable);
@@ -196,6 +199,7 @@ Thread::Join()
     
     int msg;
     channel -> Receive(&msg); // the parent thread will wait until his child send a message.    
+    return msg;
 }
 
 ///   Plancha 2 - Ejercicio 4  

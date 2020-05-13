@@ -44,6 +44,7 @@ extern Machine *machine;  			// User program memory and registers.
 extern SynchConsole *synchConsole;  // User program console.
 extern Bitmap *mapTable;
 extern Table <OpenFile*> *filesTable;
+extern Table <Thread*> *userProgTable;
 #endif
 
 #ifdef FILESYS_NEEDED  // *FILESYS* or *FILESYS_STUB*.

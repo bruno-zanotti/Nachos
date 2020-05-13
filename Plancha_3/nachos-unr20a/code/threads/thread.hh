@@ -99,7 +99,7 @@ public:
 
     /// Plancha 2 - Ejercicio 3-4
     /// Initialize a `Thread`.
-    Thread(const char *debugName, bool IsJoinable=false, int threadPriority = 0);
+    Thread(const char *debugName, bool isJoinable=false, int threadPriority = 0);
 
     /// Deallocate a Thread.
     ///
@@ -131,7 +131,8 @@ public:
     void Print() const;
 
     /// Plancha 2 - Ejercicio 3 
-    void Join();
+    /// return exit status
+    int Join();
     
     /// Plancha 2 - Ejercicio 4
     int GetPriority();

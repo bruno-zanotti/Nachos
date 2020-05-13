@@ -205,7 +205,7 @@ private:
     /// For debugging.
     const char *name;
     
-    int *buffer;
+    int buffer;
     bool bufferEmpty;
     Lock *lock;
     Condition *senders, *receivers;

@@ -12,6 +12,6 @@
 /// are called when a user program is executing, and either does a system
 /// call, or generates an addressing or arithmetic exception.
 void SetExceptionHandlers();
-
+void StartProcess(const char *filename);
 
 #endif

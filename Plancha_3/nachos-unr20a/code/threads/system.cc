@@ -48,6 +48,7 @@ Machine *machine;  ///< User program memory and registers.
 SynchConsole *synchConsole;
 Bitmap *mapTable;
 Table <OpenFile*> *filesTable;
+Table <Thread*> *userProgTable;
 #endif
 
 #ifdef NETWORK
@@ -193,6 +194,7 @@ Initialize(int argc, char **argv)
     synchConsole = new SynchConsole(NULL, NULL);
     mapTable = new Bitmap(NUM_PHYS_PAGES);
     filesTable = new Table<OpenFile*>;
+    userProgTable = new Table<Thread*>;
     SetExceptionHandlers();
 #endif
 
@@ -228,6 +230,7 @@ Cleanup()
     delete synchConsole;
     delete mapTable;
     delete filesTable;
+    delete userProgTable;
 #endif
 
 #ifdef FILESYS_NEEDED

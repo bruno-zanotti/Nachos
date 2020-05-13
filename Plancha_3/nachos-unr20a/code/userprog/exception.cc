@@ -33,7 +33,38 @@
 #include <stdio.h>
 
 // Plancha 3 - Ejercicio 2
-#define INIT_FILE_SIZE 10
+#define INIT_FILE_SIZE 64
+
+
+/// Run a user program.
+///
+/// Open the executable, load it into memory, and jump to it.
+void
+StartProcess(void *filename_)
+{
+    // Reinterpret arg `name` as a string.
+    char *filename = (char *) filename_;
+
+    ASSERT(filename != nullptr);
+
+    OpenFile *executable = fileSystem->Open(filename);
+    if (executable == nullptr) {
+        printf("Unable to open file %s\n", filename);
+        return;
+    }
+
+    AddressSpace *space = new AddressSpace(executable);
+    currentThread->space = space;
+
+    delete executable;
+
+    space->InitRegisters();  // Set the initial register values.
+    space->RestoreState();   // Load page table register.
+
+    machine->Run();  // Jump to the user progam.
+    ASSERT(false);   // `machine->Run` never returns; the address space
+                     // exits by doing the system call `Exit`.
+}
 
 static void
 IncrementPC()
@@ -101,9 +132,9 @@ SyscallHandler(ExceptionType _et)
         // Plancha 3 - Ejercicio 2
         case SC_EXIT: {
             // Read Exit Status
-            int s = machine->ReadRegister(4);
-            DEBUG('e', "Program exited with '%u' status.\n",s);
-            currentThread->Finish(s);
+            int status = machine->ReadRegister(4);
+            DEBUG('e', "Program exited with '%u' status.\n",status);
+            currentThread->Finish(status);
             break;
         }
 
@@ -119,35 +150,29 @@ SyscallHandler(ExceptionType _et)
             /// TODO: ver si es necesario
             ASSERT(filename != nullptr);
 
-            // currentThread.joinable = true;
-            // Thread new_thread = new ()
+            DEBUG('e', "Program: '%s' starts.\n",filename);
+            Thread *childThread = new Thread(filename,true);
 
-            OpenFile *executable = fileSystem->Open(filename);
-            if (executable == nullptr) {
-                printf("Unable to open file %s\n", filename);
-                return;
-            }
-
-            AddressSpace *space = new AddressSpace(executable);
-            currentThread->space = space;
-
-            delete executable;
-
-            space->InitRegisters();  // Set the initial register values.
-            space->RestoreState();   // Load page table register.
-
-            DEBUG('e', "Program: '%s' execution starting.\n",filename);
-
-            machine->Run();  // Jump to the user progam.
-
+            childThread -> Fork(StartProcess, (void *) filename);
+            SpaceId id = userProgTable -> Add(childThread);
+            /// TODO: ver si el join hayq ue hacerlo acá o no.
             // exits by doing the system call `Exit`.
             DEBUG('e', "Program: '%s' execution finished.\n",filename);
+            machine -> WriteRegister(2, id); 
             break;
         }
 
         // Plancha 3 - Ejercicio 2
         case SC_JOIN: {
-            
+            SpaceId id = machine -> ReadRegister(4);
+            /// TODO: checkear que pasa si el Get no encuentra el fid
+            Thread *thread = userProgTable -> Get(id);
+            DEBUG('e', "making join.\n");
+            int status = thread -> Join();
+            DEBUG('e', "making yield.\n");
+            currentThread -> Yield();
+            DEBUG('e', "finishing join with status: %d.\n",status);
+            machine -> WriteRegister(2, status);
             break;
         }
 
@@ -236,6 +261,7 @@ SyscallHandler(ExceptionType _et)
 
             }
             else {
+                /// TODO: checkear que pasa si el Get no encuentra el fid
                 OpenFile *file = filesTable -> Get(fid);
                 i = file -> ReadAt(buffer,size,0);
                 WriteBufferToUser(buffer, addr, size);
@@ -265,6 +291,7 @@ SyscallHandler(ExceptionType _et)
                     synchConsole -> PutChar(buffer[i]);       
             }
             else {
+                /// TODO: checkear que pasa si el Get no encuentra el fid 
                 OpenFile *file = filesTable -> Get(fid);
                 i = file -> Write(buffer,size);
                 DEBUG('f', "Write '%s' from %u.\n", buffer,fid);            }

@@ -63,10 +63,16 @@ public:
     OpenFile *Open(const char *name)
     {
         ASSERT(name != nullptr);
-
+        /// TODO: borrar debugs
+        DEBUG('e', "Name123: %s.\n",name);
         int fileDescriptor = SystemDep::OpenForReadWrite(name, false);
-        if (fileDescriptor == -1)
+        if (fileDescriptor == -1){
+            DEBUG('e', "is null.\n");
             return nullptr;
+        }
+        else{
+            DEBUG('e', "fileDescriptor: %d.\n",fileDescriptor);
+        }
         return new OpenFile(fileDescriptor);
     }
 

@@ -17,7 +17,12 @@ main(void)
 {
     Create("test.txt");
     OpenFileId o = Open("test.txt");
-    Write("Hello world\n",12,o);
+    char buffer[60];
+    int i = 0;
+    do
+        Read(&buffer[i], 1, 0);
+    while (buffer[i++] != '\n');
+    Write(buffer,i,1);
     Close(o);
     return 0;
 }

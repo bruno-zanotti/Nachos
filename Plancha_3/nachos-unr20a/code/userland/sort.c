@@ -33,5 +33,6 @@ main(void)
             }
 
     // And then we're done -- should be 0!
+    Write("termino sort\n", 15, CONSOLE_OUTPUT);
     return A[0];
 }

@@ -61,10 +61,12 @@ Semaphore::GetName() const
 void
 Semaphore::P()
 {
+    DEBUG('s', "Semaphore: %s wants to decrease counter\n", this -> GetName());    
     IntStatus oldLevel = interrupt->SetLevel(INT_OFF);
       // Disable interrupts.
 
     while (value == 0) {  // Semaphore not available.
+        DEBUG('s', "Semaphore: %s starts waiting\n", this -> GetName());    
         queue->Append(currentThread);  // So go to sleep.
         currentThread->Sleep();
     }
@@ -81,8 +83,8 @@ Semaphore::P()
 void
 Semaphore::V()
 {
+    DEBUG('s', "Semaphore: %s wants to increment counter\n", this -> GetName());    
     IntStatus oldLevel = interrupt->SetLevel(INT_OFF);
-
     Thread *thread = queue->Pop();
     if (thread != nullptr)
         // Make thread ready, consuming the `V` immediately.
@@ -201,7 +203,10 @@ void
 Condition::Signal()
 {
     DEBUG('s', "Thread: %s make a signal\n", currentThread -> GetName());
-    sem_queue -> Pop() -> V();
+    Semaphore *s = sem_queue -> Pop();
+    // Si no hay receivers esperando, se rompe (caso joineable nadie hace join)
+    ASSERT(s != nullptr);
+    s -> V();
 }
 
 /// Plancha 2 - Ejercicio 1
@@ -256,7 +261,6 @@ Channel::Send(int message)
     
     while(! bufferEmpty)
         senders -> Wait(); // Esperar que alguien tome algun mensaje
-    DEBUG('s', "SE ROMPE 1");
     
     lock -> Release();     
 }

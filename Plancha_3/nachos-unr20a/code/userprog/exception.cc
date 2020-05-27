@@ -29,6 +29,9 @@
 // Plancha 3 - Ejercicio 2
 #include "filesys/file_system.hh"
 #include "address_space.hh"
+// Plancha 3 - Ejercicio 4
+#include "args.hh"
+
 
 #include <stdio.h>
 
@@ -40,28 +43,28 @@
 ///
 /// Open the executable, load it into memory, and jump to it.
 void
-StartProcess(void *filename_)
+StartProcess(void *argv_)
 {
-    // Reinterpret arg `name` as a string.
-    char *filename = (char *) filename_;
+    // Reinterpret args as a string.
+    char **argv = (char **) argv_;
 
-    ASSERT(filename != nullptr);
+    // Set the initial register
+    currentThread -> space -> InitRegisters();
+    // Load page table register.
+    currentThread -> space -> RestoreState();   
 
-    OpenFile *executable = fileSystem->Open(filename);
-    if (executable == nullptr) {
-        printf("Unable to open file %s\n", filename);
-        return;
-    }
+    // write args in the stack
+    unsigned argc = WriteArgs(argv);
 
-    AddressSpace *space = new AddressSpace(executable);
-    currentThread->space = space;
+    // Decrease by 16 because it was increased during WriteArgs
+    // to make room for "register saves".
+    int argvAddr = machine->ReadRegister(STACK_REG);
+    machine->WriteRegister(STACK_REG, argvAddr - 16);
 
-    delete executable;
+    machine -> WriteRegister(4, argc); 
+    machine -> WriteRegister(5, argvAddr);
 
-    space->InitRegisters();  // Set the initial register values.
-    space->RestoreState();   // Load page table register.
-
-    machine->Run();  // Jump to the user progam.
+    machine -> Run();  // Jump to the user progam.
     ASSERT(false);   // `machine->Run` never returns; the address space
                      // exits by doing the system call `Exit`.
 }
@@ -116,7 +119,7 @@ DefaultHandler(ExceptionType et)
 static void
 SyscallHandler(ExceptionType _et)
 {
-    int scid = machine->ReadRegister(2), i;
+    int scid = machine -> ReadRegister(2), i;
     // Plancha 3 - Ejercicio 2
     char buffer[512];
     for(int lu=0;lu<512;lu++)
@@ -132,32 +135,54 @@ SyscallHandler(ExceptionType _et)
         // Plancha 3 - Ejercicio 2
         case SC_EXIT: {
             // Read Exit Status
-            int status = machine->ReadRegister(4);
+            int status = machine -> ReadRegister(4);
             DEBUG('e', "Program exited with '%u' status.\n",status);
             currentThread->Finish(status);
             break;
         }
 
-        // Plancha 3 - Ejercicio 2
+        // Plancha 3 - Ejercicio 2 - Ejercicio 4 
         case SC_EXEC: {
-            int filenameAddr = machine->ReadRegister(4);
-            
+            int filenameAddr = machine -> ReadRegister(4);
+            int argsAddr     = machine -> ReadRegister(5);
+            int joinable     = machine -> ReadRegister(6);
+
+            // read file name
             char filename[FILE_NAME_MAX_LEN + 1];
-            if (!ReadStringFromUser(filenameAddr, filename, sizeof filename))
-                DEBUG('a', "Error: filename string too long (maximum is %u bytes).\n",
-                      FILE_NAME_MAX_LEN);
+            if (!ReadStringFromUser(filenameAddr, filename, sizeof(filename)))
+                DEBUG('e', "Error: filename string too long (maximum is %u bytes).\n",FILE_NAME_MAX_LEN);
+
+            // read arguments
+            char** argv = nullptr;
+            argv = SaveArgs(argsAddr);
+
+        	for(int j=0; argv[j] != nullptr; j++){
+                DEBUG('e', "args %s.\n", argv[j]);    
+            }
+
+            // open filename
+            OpenFile *executable = fileSystem->Open(filename);
+            if (executable == nullptr) {
+                DEBUG('e',"Unable to open file %s\n", filename);
+                machine -> WriteRegister(2, -1);
+                break;
+            }
+
+            // create address space
+            AddressSpace *space = new AddressSpace(executable);
+            delete executable;
             
-            /// TODO: ver si es necesario
-            ASSERT(filename != nullptr);
+            // create child thread
+            Thread *childThread = new Thread(filename,joinable);
+            childThread->space = space;
 
-            DEBUG('e', "Program: '%s' starts.\n",filename);
-            Thread *childThread = new Thread(filename,true);
-
-            childThread -> Fork(StartProcess, (void *) filename);
+            DEBUG('e', "SC_EXEC Program: '%s' starts.\n",filename);
+            childThread -> Fork(StartProcess, (void *) argv);
             SpaceId id = userProgTable -> Add(childThread);
-            /// TODO: ver si el join hayq ue hacerlo acá o no.
-            // exits by doing the system call `Exit`.
-            DEBUG('e', "Program: '%s' execution finished.\n",filename);
+
+            DEBUG('e', "SC_EXEC has finished.\n");
+    
+            //return exit status
             machine -> WriteRegister(2, id); 
             break;
         }
@@ -165,13 +190,14 @@ SyscallHandler(ExceptionType _et)
         // Plancha 3 - Ejercicio 2
         case SC_JOIN: {
             SpaceId id = machine -> ReadRegister(4);
-            /// TODO: checkear que pasa si el Get no encuentra el fid
+            DEBUG('e', "SC_JOIN starts.\n");
             Thread *thread = userProgTable -> Get(id);
-            DEBUG('e', "making join.\n");
+            
+            ASSERT(thread != nullptr);
+
             int status = thread -> Join();
-            DEBUG('e', "making yield.\n");
             currentThread -> Yield();
-            DEBUG('e', "finishing join with status: %d.\n",status);
+            DEBUG('e', "SC_JOIN has finished with status: %d.\n",status);
             machine -> WriteRegister(2, status);
             break;
         }
@@ -187,11 +213,10 @@ SyscallHandler(ExceptionType _et)
                       FILE_NAME_MAX_LEN);
 
             // Plancha 3 - Ejercicio 2
-            DEBUG('e', "Open requested for file `%s`.\n", filename); 
+            DEBUG('e', "`Create` requested for file `%s`.\n", filename);
             fileSystem -> Create(filename,INIT_FILE_SIZE);
 
-            DEBUG('e', "`Create` requested for file `%s`.\n", filename);
-            DEBUG('f',"%s created\n",filename);
+            DEBUG('e',"%s created\n",filename);
             break;
         }
 
@@ -199,15 +224,15 @@ SyscallHandler(ExceptionType _et)
         case SC_REMOVE: {
             int filenameAddr = machine->ReadRegister(4);
             if (filenameAddr == 0)
-                DEBUG('a', "Error: address to filename string is null.\n");
+                DEBUG('e', "Error: address to filename string is null.\n");
 
             char filename[FILE_NAME_MAX_LEN + 1];
             if (!ReadStringFromUser(filenameAddr, filename, sizeof filename))
-                DEBUG('a', "Error: filename string too long (maximum is %u bytes).\n",
+                DEBUG('e', "Error: filename string too long (maximum is %u bytes).\n",
                       FILE_NAME_MAX_LEN);
 
             fileSystem -> Remove(filename);
-            DEBUG('f',"%s removed\n",filename);
+            DEBUG('e',"%s removed\n",filename);
 
             break;
         }
@@ -216,18 +241,23 @@ SyscallHandler(ExceptionType _et)
         case SC_OPEN: {
             int filenameAddr = machine->ReadRegister(4);
             if (filenameAddr == 0)
-                DEBUG('a', "Error: address to filename string is null.\n");
+                DEBUG('e', "Error: address to filename string is null.\n");
 
             char filename[FILE_NAME_MAX_LEN + 1];
             if (!ReadStringFromUser(filenameAddr, filename, sizeof filename))
-                DEBUG('a', "Error: filename string too long (maximum is %u bytes).\n",
+                DEBUG('e', "Error: filename string too long (maximum is %u bytes).\n",
                       FILE_NAME_MAX_LEN);
-            DEBUG('a', "Open requested for file `%s`.\n", filename);
+            DEBUG('e', "Open requested for file `%s`.\n", filename);
 
             OpenFile *file = fileSystem -> Open(filename);
+            if (file == nullptr){
+                DEBUG('e', "OPEN: file `%s` not found.\n", filename);
+                machine -> WriteRegister(2, -1); 
+                break;
+            }
             int fid = filesTable -> Add(file);
 
-            DEBUG('f',"%s opened for id %u.\n",filename,fid);
+            DEBUG('e',"File '%s' with id '%u' opened.\n",filename,fid);
 
             machine -> WriteRegister(2, fid); 
             break;
@@ -239,16 +269,19 @@ SyscallHandler(ExceptionType _et)
             OpenFileId fid = machine -> ReadRegister(4);
             DEBUG('e', "`Close` requested for id %u.\n", fid);
             filesTable -> Remove(fid);
-            DEBUG('f', "%u closed.\n", fid);
+            DEBUG('e', "%u closed.\n", fid);
             break;
         }
 
         // Plancha 3 - Ejercicio 2
+        // Plancha 3 - Ejercicio 4
+        // Added offset to be able to read some parts of a file.
         case SC_READ: {
             int addr = machine -> ReadRegister(4);
             int size = machine -> ReadRegister(5);
             OpenFileId fid = machine -> ReadRegister(6);
-            
+            int offset = machine -> ReadRegister(7);
+
             //ASSERT(addr != NULL);
             ASSERT(size > 0);
 
@@ -257,16 +290,19 @@ SyscallHandler(ExceptionType _et)
                 for (i = 0; i < size ; i++)
                     buffer[i] = synchConsole -> GetChar();       
                 WriteBufferToUser(buffer, addr, size);
-                DEBUG('f', "Read %s from Console.\n", buffer);
+                DEBUG('e', "Read %s from Console.\n", buffer);
 
             }
             else {
-                /// TODO: checkear que pasa si el Get no encuentra el fid
                 OpenFile *file = filesTable -> Get(fid);
-                i = file -> ReadAt(buffer,size,0);
+                if (file == nullptr){
+                    DEBUG('e', "READ: file `%s` not found.\n", file);
+                    machine -> WriteRegister(2, -1); 
+                    break;
+                }
+                i = file -> ReadAt(buffer,size,offset);
                 WriteBufferToUser(buffer, addr, size);
-                DEBUG('f', "Read '%u' bytes from %u: '%s'.\n",i,fid, buffer);
-
+                DEBUG('e', "Read '%u' bytes from %d: '%s'.\n",i,fid,buffer);
             }
 
             machine -> WriteRegister(2, i); 
@@ -286,15 +322,23 @@ SyscallHandler(ExceptionType _et)
 
             if (fid == CONSOLE_OUTPUT)
             {
-                DEBUG('f', "Write '%s' in shell from %u.\n", buffer,fid); 
+                DEBUG('e', "Write '%s' in shell from %u.\n", buffer,fid); 
                 for (i = 0; i < size && buffer[i] != '\0'; i++)
-                    synchConsole -> PutChar(buffer[i]);       
+                    synchConsole -> PutChar(buffer[i]);
+                machine -> WriteRegister(2, i); 
+                  
             }
             else {
-                /// TODO: checkear que pasa si el Get no encuentra el fid 
                 OpenFile *file = filesTable -> Get(fid);
+                if (!file) {
+                    DEBUG('e', "Write: file with id '%d' not found.\n", fid);
+                    machine->WriteRegister(2, -1);
+                    break;
+                }
+
                 i = file -> Write(buffer,size);
-                DEBUG('f', "Write '%s' from %u.\n", buffer,fid);            }
+                DEBUG('e', "Write '%s' from %u.\n", buffer,fid);            }
+                machine -> WriteRegister(2, i); 
             
             break;
         }

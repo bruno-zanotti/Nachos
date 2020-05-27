@@ -17,9 +17,11 @@ WriteDone_(void* data){
 
 SynchConsole::SynchConsole(const char *readFile, const char *writeFile)
 {
-    console   = new Console(readFile, writeFile, ReadAvail_, WriteDone_, this);
+    console   = new Console(nullptr, nullptr, ReadAvail_, WriteDone_, this);
     readAvailSem = new Semaphore("read avail", 0);
     writeDoneSem = new Semaphore("write done", 0);
+    readLock = new Lock("Read synch console lock");    
+    writeLock = new Lock("Write synch console lock");    
 }
 
 SynchConsole::~SynchConsole()
@@ -27,22 +29,28 @@ SynchConsole::~SynchConsole()
 	delete console;
 	delete readAvailSem;
 	delete writeDoneSem;
+    delete readLock;
+    delete writeLock;
 }
 
 
 char
 SynchConsole::GetChar()
 {
-	readAvailSem -> P();
+	readLock->Acquire();
+    readAvailSem -> P();
     char c = console -> GetChar();
+    readLock->Release();
     return c;
 }
 
 void
 SynchConsole::PutChar(char c)
 {
+    writeLock->Acquire();
     console -> PutChar(c);
     writeDoneSem -> P();
+    writeLock->Release();
 }
 
 void 

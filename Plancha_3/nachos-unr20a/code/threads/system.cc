@@ -194,6 +194,8 @@ Initialize(int argc, char **argv)
     synchConsole = new SynchConsole(NULL, NULL);
     mapTable = new Bitmap(NUM_PHYS_PAGES);
     filesTable = new Table<OpenFile*>;
+    filesTable -> Add(nullptr);
+    filesTable -> Add(nullptr);
     userProgTable = new Table<Thread*>;
     SetExceptionHandlers();
 #endif

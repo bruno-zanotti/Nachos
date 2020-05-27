@@ -15,15 +15,14 @@ main(void)
         Write(prompt, 2, output);
         i = 0;
         do
-            Read(&buffer[i], 1, input);
+            Read(&buffer[i], 1, input, 0);
         while (buffer[i++] != '\n');
 
         buffer[--i] = '\0';
 
+        char *argv[14] = {buffer, "./test.txt", "./copy.txt"};
         if (i > 0) {
-            Write(buffer,i,1);    
-            newProc = Exec(buffer);
-            // Write("Hello world\n",12,1);
+            newProc = Exec(argv);
             Join(newProc);
         }
     }

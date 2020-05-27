@@ -58,7 +58,8 @@ typedef int SpaceId;
 
 /// Run the executable, stored in the Nachos file `name`, and return the
 /// address space identifier.
-SpaceId Exec(char *name);
+// SpaceId Exec(char *name, int argc, char *argv[]);
+SpaceId Exec(char *name, char **argv, int joinable);
 
 /// Only return once the the user program `id` has finished.
 ///
@@ -117,7 +118,7 @@ int Write(const char *buffer, int size, OpenFileId id);
 /// enough, or if it is an I/O device, and there are not enough characters to
 /// read, return whatever is available (for I/O devices, you should always
 /// wait until you can return at least one character).
-int Read(char *buffer, int size, OpenFileId id);
+int Read(char *buffer, int size, OpenFileId id, int offset);
 
 /// Close the file, we are done reading and writing to it.
 int Close(OpenFileId id);

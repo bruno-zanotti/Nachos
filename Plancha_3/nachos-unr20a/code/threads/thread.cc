@@ -183,7 +183,6 @@ Thread::Finish(int exitStatus)
     // If it's joinable, then send a 1 to his parent.
     if(joinable)
         channel -> Send(exitStatus);
-    DEBUG('t', "Finishing thread \"%s\" ya mando el send\n", GetName());
 
     threadToBeDestroyed = currentThread;
     Sleep();  // Invokes `SWITCH`.

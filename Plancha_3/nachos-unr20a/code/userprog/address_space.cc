@@ -17,8 +17,7 @@ unsigned AddressTranslation(uint32_t virtualAddr,TranslationEntry* pageTable){
    DEBUG('a',"virtual address %u\n",virtualAddr);
    unsigned offset = virtualAddr % PAGE_SIZE;
 
-   ///TODO: agregar DivRoundDown
-
+   ///TODO: podría llegar a pasar que se rompa la division, habría que agregar DivRoundDown
    unsigned virtualPage =  virtualAddr / PAGE_SIZE;
    DEBUG('a',"virtual page %u and offset %u\n",virtualPage,offset);
    return (pageTable[virtualPage].physicalPage*PAGE_SIZE) + offset;

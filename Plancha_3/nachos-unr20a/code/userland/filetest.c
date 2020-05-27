@@ -13,7 +13,7 @@
 
 
 int
-main(void)
+main(int argc, char **argv)
 {
     Create("test.txt");
     OpenFileId o = Open("test.txt");
@@ -22,7 +22,9 @@ main(void)
     do
         Read(&buffer[i], 1, 0);
     while (buffer[i++] != '\n');
-    Write(buffer,i,1);
+    
+    Write(buffer,i,o);
+
     Close(o);
     return 0;
 }

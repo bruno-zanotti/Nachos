@@ -93,7 +93,6 @@ AddressSpace::AddressSpace(OpenFile *executable_file)
         for (unsigned i = 0; totalWrittenCode < codeSize; i++)
         {
             physicalAddr = AddressTranslation(virtualAddr + i * PAGE_SIZE, pageTable);
-            // physicalAddr = pageTable[initVirtualPage++].physicalPage * PAGE_SIZE;
             DEBUG('a', "direccion fisica, at 0x%X\n",physicalAddr);
             writtenSize = min(PAGE_SIZE, codeSize - totalWrittenCode);
             exe.ReadCodeBlock(&mainMemory[physicalAddr], writtenSize, totalWrittenCode);
@@ -112,7 +111,6 @@ AddressSpace::AddressSpace(OpenFile *executable_file)
         for (unsigned i = 0; totalWrittenData < initDataSize; i++)
         {
             physicalAddr = AddressTranslation(virtualAddr + i * PAGE_SIZE, pageTable);
-            // physicalAddr = pageTable[initVirtualPage++].physicalPage * PAGE_SIZE;
             DEBUG('a', "direccion fisica, at 0x%X\n",physicalAddr);
             writtenSize = min(PAGE_SIZE, initDataSize - totalWrittenData);
             exe.ReadDataBlock(&mainMemory[physicalAddr], writtenSize, totalWrittenData);
@@ -173,10 +171,29 @@ AddressSpace::SaveState()
 /// On a context switch, restore the machine state so that this address space
 /// can run.
 ///
-/// For now, tell the machine where to find the page table.
+// Plancha 4 - Ejercicio 1
 void
 AddressSpace::RestoreState()
 {
-    machine->GetMMU()->pageTable     = pageTable;
-    machine->GetMMU()->pageTableSize = numPages;
+    #ifdef USE_TLB
+    for (unsigned i = 0; i < TLB_SIZE; i++)
+        machine->GetMMU()->tlb[i].valid = false;
+    #else
+        machine->GetMMU()->pageTable     = pageTable;
+        machine->GetMMU()->pageTableSize = numPages;
+    #endif
 }
+
+// Plancha 4 - Ejercicio 1
+#ifdef USE_TLB
+void
+AddressSpace::LoadPage(int pageNumber)
+{
+    unsigned i = machine->GetMMU()->tlbIndex;
+    
+    machine->GetMMU()->tlb[i] = pageTable[pageNumber];
+    
+    machine->GetMMU()->tlbIndex = (i+1) % TLB_SIZE;
+
+}
+#endif

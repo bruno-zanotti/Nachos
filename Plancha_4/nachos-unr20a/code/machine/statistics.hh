@@ -47,6 +47,10 @@ public:
     /// Number of virtual memory page faults.
     unsigned long numPageFaults;
 
+    // Plancha 4 - Ejercicio 2
+    /// Number of virtual memory page succesfully found.
+    unsigned long numPageFounds;
+
     /// Number of packets sent over the network.
     unsigned long numPacketsSent;
 

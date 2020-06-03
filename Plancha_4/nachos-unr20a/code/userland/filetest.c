@@ -15,16 +15,16 @@
 int
 main(int argc, char **argv)
 {
-    Create("test.txt");
-    OpenFileId o = Open("test.txt");
+    // Create("test.txt");
+    // OpenFileId o = Open("test.txt");
     char buffer[60];
     int i = 0;
     do
-        Read(&buffer[i], 1, 0);
+        Read(&buffer[i], 1, 0, 0);
     while (buffer[i++] != '\n');
     
-    Write(buffer,i,o);
+    // Write(buffer,i,o);
 
-    Close(o);
-    return 0;
+    // Close(o);
+    // Exit(0);
 }

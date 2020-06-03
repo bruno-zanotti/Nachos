@@ -37,5 +37,5 @@ main(void)
 
     // And then we are done.
     Write("termino matmult\n", 15, CONSOLE_OUTPUT);
-    return C[DIM - 1][DIM - 1];
+    Exit(C[DIM - 1][DIM - 1]);
 }

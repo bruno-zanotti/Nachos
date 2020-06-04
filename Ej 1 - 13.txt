@@ -1,0 +1,203 @@
+PLACHA 1
+
+1.  ¿Cuanta memoria tiene la maquina simulada para Nachos?
+
+    En machine/mmu.hh se declara el tamaño de memoria como:
+     - MEMORY_SIZE = NUM_PHYS_PAGES * PAGE_SIZE
+     - NUM_PHYS_PAGES = 32
+     - PAGE_SIZE = SECTOR_SIZE = 128 (SECTOR_SIZE esta declarada en machine/disk.hh) 
+
+    Con lo cual, MEMORY_SIZE = 32 * 128 = 4096 bytes.
+
+2.  ¿Como cambiaria ese valor?
+
+    Para cambiar el tamaño de la memoria lo mas logico seria cambiar el numero de paginas (NUM_PHYS_PAGES)
+
+3.  ¿De que tamaño es un disco?
+
+    En machine/disk.cc se declara el tamaño de un disco como:
+     - DISK_SIZE = MAGIC_SIZE + NUM_SECTORS * SECTOR_SIZE
+
+    La constantes que faltan estan declaradas en machine/disk.hh
+     - MAGIC_SIZE = sizeof (int) = 4
+     - NUM_SECTORS = SECTORS_PER_TRACK * NUM_TRACKS
+     - SECTORS_PER_TRACK = 32
+     - NUM_TRACKS = 32
+     - SECTOR_SIZE = 128
+
+    Con lo cual, DISK_SIZE = 4 + (32 * 32) * 128 = 131076 bytes.
+
+4.  ¿Cuantas instrucciones de MIPS simula Nachos?
+    
+    Nachos simula 60 instrucciones MIPS, las cuales estan enumeradas en machine/encoding.hh.
+
+5.  Explique el codigo que procesa la instruccion add.
+
+    Dicho codigo se encuentra en machine/mips_sim.cc, en la funcion Machine::ExecInstruction.
+     
+    case OP_ADD:
+            sum = registers[instr->rs] + registers[instr->rt];
+            if (!((registers[instr->rs] ^ registers[instr->rt]) & SIGN_BIT)
+                  && (registers[instr->rs] ^ sum) & SIGN_BIT) {
+                RaiseException(OVERFLOW_EXCEPTION, 0);
+                return;
+            }
+            registers[instr->rd] = sum;
+            break;
+
+    Se suman los registros rs y rt de la instruccion y se guardan en una variable local (sum).
+    Luego, chequea si se produce overflow y de ser asi levanta una excepcion.
+    Sino, devuelve el resultado en el registro rd de la instruccion.
+
+6.  Nombre los archivos fuente en los que figuran las funciones y metodos llamados por el main de Nachos al ejecutarlo en el directorio threads (hasta dos niveles de profundidad).
+
+      FUNCION                           -->         ARCHIVO FUENTE
+    
+    - ThreadTest                        -->         threads/thread_test.cc       
+        - DEBUG                         -->         lib/utility.hh
+        - Thread::Thread                -->         threads/thread.cc            
+        - Thread::Fork                  -->         threads/thread.cc            
+        - SimpleThread                  -->         threads/thread_test.cc       
+                                                                                    
+    - Copy                              -->          filesys/fs_test.cc          
+        - ASSERT                        -->          lib/utility.hh
+        - fileSystem::Create            -->         filesys/file_system.cc       
+        - fileSystem::Open              -->         filesys/file_system.cc       
+        - OpenFile::Write               -->         filesys/open_file.cc         
+        - DEBUG                         -->         lib/utility.hh
+        - OpenFile::delete              -->         filesys/open_file.hh               
+                                                                                 
+    - Print                             -->         filesys/fs_test.cc           
+        - ASSERT                        -->         lib/utility.hh
+        - fileSystem::Open              -->         filesys/file_system.cc       
+        - openFile::Read                -->         filesys/open_file.cc         
+        - delete                        -->         filesys/open_file.hh                
+                                                                                    
+    - PerformanceTest                   -->         filesys/fs_test.cc           
+        - stats::Print                  -->         machine/statistics.cc        
+        - FileWrite                     -->         filesys/fs_test.cc           
+        - FileRead                      -->         filesys/fs_test.cc           
+        - fileSystem::Remove            -->         filesys/file_system.cc         
+                                                                                 
+    - StartProcess                      -->         userprog/prog_test.cc        
+        - ASSERT                        -->         lib/utility.hh          
+        - fileSystem::Open              -->         filesys/file_system.cc       
+        - AddressSpace::AddressSpace    -->         userporg/address_space.cc        
+        - OpenFile::delete              -->         filesys/open_file.cc         
+        - AddressSpace::InitRegisters   -->         userporg/address_space.cc    
+        - AddressSpace::RestoreState    -->         userporg/address_space.cc      
+        - Machine::Run                  -->         machine/mips_sim.cc          
+                                                                                 
+    - ConsoleTest                       -->         userprog/prog_test.cc        
+        - Console::Console              -->         machine/console.cc              
+        - Semaphore::Semaphore          -->         threads/synch.cc             
+        - Semaphore::P                  -->         threads/synch.cc             
+        - Console::GetChar              -->         machine/console.cc           
+        - Console::PutChar              -->         machine/console.cc           
+                                                                                 
+    - MailTest                          -->         network/net_test.cc          
+        - PostOffice::Send              -->         network/post.cc                 
+        - PostOffice::Receive           -->         network/post.cc                 
+        - Interrupt::Halt               -->         machine/interrupt.cc         
+                                                                                 
+    - Debug                             -->         lib/utility.hh
+                                                                                 
+    - Initialize                        -->         threads/system.cc            
+        - ASSERT                        -->         lib/utility.hh
+        - RandomInit                    -->         machine/system_dep.cc        
+        - SetFlags                      -->         lib/utility.hh
+        - Statistics::Statistics        -->         machine/statistics.cc        
+        - Interrupt::Interrupt          -->         machine/interrupt.cc           
+        - Scheduler::Scheduler          -->         threads/scheduler.cc         
+        - Timer::Timer                  -->         machine/timer.cc             
+        - Thread::Thread                -->         threads/thread.cc            
+        - Thread::SetStatus             -->         machine/interrupt.cc         
+        - Interrupt::Enable             -->         machine/interrupt.cc         
+        - CallOnUserAbort               -->         machine/system_dep.cc        
+        - PreemptiveScheduler::SetUp    -->         threads/preemptive.cc        
+        - Debugger::Debugger            -->         userprog/debugger.cc         
+        - SynchDisk::SynchDisk          -->         filesys/synch_disk.cc        
+        - Machine::Machine              -->         machine/machine.cc           
+        - FileSystem::FileSystem        -->         filesys/file_system.cc       
+        - PostOffice::PostOffice        -->         network/post.cc              
+                                                                                 
+    - ASSERT                            -->         lib/utility.hh  
+    - Interrupt::Halt                   -->         machine/interrupt.cc         
+    - fileSystem::Remove                -->         filesys/file_system.cc             
+    - fileSystem::List                  -->         filesys/file_system.cc          
+    - fileSystem::Print                 -->         filesys/file_system.cc          
+    - Delay                             -->         machine/system_dep.cc        
+                                                                                 
+    - Thread::Finish                    -->         threads/threads.cc           
+        - Interrupt::SetLevel           -->         machine/interrupt.cc         
+        - ASSERT                        -->         lib/utility.hh
+        - DEBUG                         -->         lib/utility.hh
+        - Thread::Sleep                 -->         threads/thread.cc            
+        
+7.  ¿Por que se prefiere emular una CPU en vez de utilizar directamente la CPU existente?
+
+    Al emular una CPU se evita el riesgo de trabajar sobre una CPU real a tan bajo nivel, además, esto permite que Nachos se corra siempre sobre una misma arquitectura simplificada permitiendo modificar sus parametros. Otra ventaja es que no es necesario que Nachos sea un programa booteable para poder ser ejecutado. 
+
+8.  Comente el efecto de las distintas banderas de depuracion.
+
+    En el archivo lib/debug.hh se describe el efecto de las distintas banderas de depuracion:
+    
+    `+` -- turn on all debug messages.
+    `t` -- thread system.
+    `s` -- semaphores, locks, and conditions.
+    `i` -- interrupt emulation.
+    `m` -- machine emulation (requires *USER_PROGRAM*).
+    `d` -- disk emulation (requires *FILESYS*).
+    `f` -- file system (requires *FILESYS*).
+    `a` -- address spaces (requires *USER_PROGRAM*).
+    `n` -- network emulation (requires *NETWORK*).
+
+9.  ¿Que efecto hacen las macros ASSERT y DEBUG definidas en threads/utility.h?
+
+    La macro ASSERT permite ejecutar el codigo siguiente si se cumple una condicion dada como argumento, si no, muestra un mensaje de error "Assertion failes" con la expresion que fallo y en el lugar en que ocurrio.
+    La macro DEBUG toma una bandera y un mensaje e imprime el mensaje de depuracion si dicha bandera esta habilitada.
+
+10.  ¿Donde estan definidas las constantes USER PROGRAM, FILESYS NEEDED, FILESYS STUB y NETWORK?
+
+    Las constantes USER PROGRAM, FILESYS NEEDED, FILESYS STUB y NETWORK se definen a la hora de compilar y se encuentran en el archivo filesys/Makefile
+
+11.  ¿Cual es la diferencia entre las clases List y SynchList?
+
+    Ambas clases definen listas simplemente enlazadas, pero la diferencia es que la clase SynchList tiene dos restricciones:
+        * Los hilos que intenten eliminar un item de una SynchList tendran que esperar hasta que la lista contenga un elemento.
+        * Solo un hilo a la vez puede tener acceso a una SynchList.
+
+12.  ¿En que archivos esta definida la funcion main? ¿En que archivo esta definida la funcion main del ejecutable nachos del directorio userprog?
+
+    Los siguientes archivos definen una funcion main:
+
+     -   bin/coff2flat.c
+     -   bin/coff2noff.c
+     -   bin/disasm.c
+     -   bin/main.c
+     -   bin/out.c
+     -   bin/readnoff.c
+     -   userland/filetest.c
+     -   userland/halt.c
+     -   userland/shell.c
+     -   userland/matmult.c
+     -   userland/sort.c
+     -   userland/tiny_shell.c           
+     -   bin/fuse/nachosfuse.c
+     -   threads/main.cc
+                        
+    El main del ejecutable nachos esta definida en threads/main.cc
+
+13.  ¿Que linea de comandos soporta Nachos? ¿Que efecto hace la opcion -rs?
+
+    Las lineas de comandos que soporta Nachos tiene la siguiente forma:
+
+    nachos [-d <debugflags>] [-p] [-rs <random seed #>] [-z]
+           [-s] [-x <nachos file>] [-tc <consoleIn> <consoleOut>]
+           [-f] [-cp <unix file> <nachos file>] [-pr <nachos file>]
+           [-rm <nachos file>] [-ls] [-D] [-tf]
+           [-n <network reliability>] [-id <machine id>]
+           [-tn <other machine id>]
+
+    La opción -rs junto a una semilla fuerza un cambio de contexto posibilitando que los hilos cambien su orden de ejecucion.    
+

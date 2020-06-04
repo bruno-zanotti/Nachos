@@ -14,12 +14,16 @@
 /code/threads/nachos
 /code/threads/swtch.s
 /code/threads/*.o
+/code/userland/echo
 /code/userland/filetest
 /code/userland/halt
 /code/userland/matmult
 /code/userland/shell
 /code/userland/sort
-/code/userland/tiny shell
+/code/userland/start
+/code/userland/tiny_shell
+/code/userland/touch
+/code/userland/*.o
 /code/userland/*.coff
 /code/userprog/Makefile.depends
 /code/userprog/nachos

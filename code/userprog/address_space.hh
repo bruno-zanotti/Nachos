@@ -46,6 +46,8 @@ public:
 
     void SaveState();
     void RestoreState();
+    // Plancha 4 - Ejercicio 2
+    void LoadPage(int pageNumber);
 
 private:
 

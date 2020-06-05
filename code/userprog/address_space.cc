@@ -176,9 +176,29 @@ AddressSpace::SaveState()
 /// can run.
 ///
 /// For now, tell the machine where to find the page table.
+// Plancha 4 - Ejercicio 1
 void
 AddressSpace::RestoreState()
 {
-    machine->GetMMU()->pageTable     = pageTable;
-    machine->GetMMU()->pageTableSize = numPages;
+    #ifdef USE_TLB
+    for (unsigned i = 0; i < TLB_SIZE; i++)
+        machine->GetMMU()->tlb[i].valid = false;
+    #else
+        machine->GetMMU()->pageTable     = pageTable;
+        machine->GetMMU()->pageTableSize = numPages;
+    #endif
 }
+
+// Plancha 4 - Ejercicio 1
+#ifdef USE_TLB
+void
+AddressSpace::LoadPage(int pageNumber)
+{
+    unsigned i = machine->GetMMU()->tlbIndex;
+    
+    machine->GetMMU()->tlb[i] = pageTable[pageNumber];
+    
+    machine->GetMMU()->tlbIndex = (i+1) % TLB_SIZE;
+
+}
+#endif

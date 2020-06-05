@@ -137,6 +137,8 @@ SyscallHandler(ExceptionType _et)
             // Read Exit Status
             int status = machine -> ReadRegister(4);
             DEBUG('e', "Program exited with '%u' status.\n",status);
+            // Plancha 4 - Ejercicio 2
+            stats->Print();
             currentThread->Finish(status);
             break;
         }
@@ -352,6 +354,29 @@ SyscallHandler(ExceptionType _et)
     IncrementPC();
 }
 
+// Plancha 4 - Ejercicio 1
+static void
+PageFaultHandler(ExceptionType _et)
+{
+    unsigned Addr = machine->ReadRegister(BAD_VADDR_REG);
+    unsigned page = DivRoundDown(Addr, PAGE_SIZE);
+    
+    DEBUG('e', "Page Fault Exception with page '%d'.\n", page);
+    #ifdef USE_TLB
+        currentThread -> space -> LoadPage(page);
+        DEBUG('e', "Page '%d' loaded in TLB.\n", page);
+    #endif
+}
+// Plancha 4 - Ejercicio 1
+static void
+ReadOnlyHandler(ExceptionType _et)
+{
+    unsigned Addr = machine->ReadRegister(BAD_VADDR_REG);
+    unsigned page = DivRoundDown(Addr, PAGE_SIZE);
+
+    DEBUG('e', "Read Only Exception for page '%d'.\n", page);
+    ASSERT(false);
+}
 
 /// By default, only system calls have their own handler.  All other
 /// exception types are assigned the default handler.
@@ -360,8 +385,9 @@ SetExceptionHandlers()
 {
     machine->SetHandler(NO_EXCEPTION,            &DefaultHandler);
     machine->SetHandler(SYSCALL_EXCEPTION,       &SyscallHandler);
-    machine->SetHandler(PAGE_FAULT_EXCEPTION,    &DefaultHandler);
-    machine->SetHandler(READ_ONLY_EXCEPTION,     &DefaultHandler);
+    // Plancha 4 - Ejercicio 1
+    machine->SetHandler(PAGE_FAULT_EXCEPTION,    &PageFaultHandler);
+    machine->SetHandler(READ_ONLY_EXCEPTION,     &ReadOnlyHandler);
     machine->SetHandler(BUS_ERROR_EXCEPTION,     &DefaultHandler);
     machine->SetHandler(ADDRESS_ERROR_EXCEPTION, &DefaultHandler);
     machine->SetHandler(OVERFLOW_EXCEPTION,      &DefaultHandler);

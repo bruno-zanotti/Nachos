@@ -97,11 +97,20 @@ Semaphore::V()
 /// Note -- without a correct implementation of `Condition::Wait`, the test
 /// case in the network assignment will not work!
 
+/// Plancha 2 - Ejercicio 1
 Lock::Lock(const char *debugName)
-{}
+{
+    name  = debugName;
+    thread = nullptr;
+    semaphore = new Semaphore(name, 1);
+    threadPriority = 0;
+}
 
+/// Plancha 2 - Ejercicio 1
 Lock::~Lock()
-{}
+{
+    delete semaphore;
+}
 
 const char *
 Lock::GetName() const
@@ -109,33 +118,62 @@ Lock::GetName() const
     return name;
 }
 
+/// Plancha 2 - Ejercicio 1
 void
 Lock::Acquire()
 {
-    // TODO
+    ASSERT (!IsHeldByCurrentThread());
+    
+    // Plancha 2 - Ejercicio 4
+    int p = currentThread -> GetPriority();
+    if (thread != nullptr && p > threadPriority)  // if someone has the lock, compare:
+        thread -> SetPriority(p);                 //  - priority of the 'new' thread
+                                                  //  - priority of the thread which has the lock 
+                                                  // if the first is bigger than the second
+                                                  // assign the same priority to the second one
+    semaphore->P();
+    thread = currentThread;
+    threadPriority = p;
+    
+    DEBUG('s', "Thread: %s acquires %s\n", currentThread -> GetName(), name);
 }
 
+/// Plancha 2 - Ejercicio 1
 void
 Lock::Release()
 {
-    // TODO
+    ASSERT (IsHeldByCurrentThread());
+    
+    // Plancha 2 - Ejercicio 4
+    if (threadPriority != thread -> GetPriority())  // restore the original priority
+        thread -> SetPriority(threadPriority);
+    
+    thread = nullptr;
+    semaphore->V();
+    DEBUG('s', "Thread: %s releases %s\n", currentThread -> GetName(), name);
 }
 
+/// Plancha 2 - Ejercicio 1
 bool
 Lock::IsHeldByCurrentThread() const
 {
-    // TODO
-    return false;
+    return currentThread == thread;
 }
 
+/// Plancha 2 - Ejercicio 1
 Condition::Condition(const char *debugName, Lock *conditionLock)
 {
-    // TODO
+    name = debugName;
+    lock = conditionLock;
+    sem_queue = new List<Semaphore *>;
 }
 
+/// Plancha 2 - Ejercicio 1
 Condition::~Condition()
 {
-    // TODO
+    while(! sem_queue -> IsEmpty())
+        delete sem_queue -> Pop();
+    delete sem_queue;
 }
 
 const char *
@@ -144,20 +182,95 @@ Condition::GetName() const
     return name;
 }
 
+/// Plancha 2 - Ejercicio 1
 void
 Condition::Wait()
 {
-    // TODO
+    DEBUG('s', "Thread: %s wait\n", currentThread -> GetName());
+    
+    Semaphore *s = new Semaphore("condition_sem",0);
+    sem_queue -> Append(s);
+    
+    lock -> Release();
+    s -> P();
+    lock -> Acquire();
 }
 
+/// Plancha 2 - Ejercicio 1
 void
 Condition::Signal()
 {
-    // TODO
+    DEBUG('s', "Thread: %s make a signal\n", currentThread -> GetName());
+    sem_queue -> Pop() -> V();
 }
 
+/// Plancha 2 - Ejercicio 1
 void
 Condition::Broadcast()
 {
-    // TODO
+    DEBUG('s', "Thread: %s make a broadcast\n", currentThread -> GetName());
+    while(! sem_queue -> IsEmpty())
+        sem_queue -> Pop() -> V();
+}
+
+/// Plancha 2 - Ejercicio 2  
+Channel::Channel(const char *debugName)
+{
+    name  = debugName;
+    buffer = NULL;
+    bufferEmpty = true;
+    lock = new Lock("Channel-lock");
+    senders = new Condition ("senders-list",lock);
+    receivers = new Condition ("receivers-list",lock);
+}
+
+/// Plancha 2 - Ejercicio 2  
+Channel::~Channel()
+{
+    delete senders;
+    delete receivers;
+    delete lock;
+}
+
+/// Plancha 2 - Ejercicio 2  
+const char *
+Channel::GetName() const
+{
+    return name;
+}
+
+/// Plancha 2 - Ejercicio 2  
+void
+Channel::Send(int message)
+{
+    lock -> Acquire();
+    
+    while(!bufferEmpty)     // if the buffer isn't empty
+        senders -> Wait();  // the senders wait
+        
+    DEBUG('s', "Thread: %s sends  %d\n", currentThread -> GetName(), message);
+
+    *buffer = message;      // "send" the message
+    bufferEmpty = false;    // now the buffer isn't empty
+    receivers -> Signal();  // send a signal to a receiver
+    
+    lock -> Release();     
+}
+
+/// Plancha 2 - Ejercicio 2  
+void
+Channel::Receive(int *message)
+{
+    lock -> Acquire();
+    
+    while(bufferEmpty)          // if the buffer is empty
+        receivers -> Wait();    // the receivers wait
+    
+    DEBUG('s', "Thread: %s receives %d\n", currentThread -> GetName(), message);
+    
+    message = buffer;           // "receive" the message
+    bufferEmpty = true;         // now the buffer is empty
+    senders -> Signal();        // comunication finished, call a new sender.
+    
+    lock -> Release();    
 }

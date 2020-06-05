@@ -40,12 +40,24 @@ IsThreadStatus(ThreadStatus s)
 /// `Thread::Fork`.
 ///
 /// * `threadName` is an arbitrary string, useful for debugging.
-Thread::Thread(const char *threadName)
+/// Plancha 2 - Ejercicio 3-4
+Thread::Thread(const char *threadName, bool IsJoinable, int threadPriority)
 {
     name     = threadName;
     stackTop = nullptr;
     stack    = nullptr;
     status   = JUST_CREATED;
+
+    /// Plancha 2 - Ejercicio 3
+    joinable = IsJoinable;
+    if (joinable)
+        channel = new Channel("join-channel");
+    else
+        channel = nullptr;
+
+    /// Plancha 2 - Ejercicio 4
+    priority = threadPriority;
+
 #ifdef USER_PROGRAM
     space    = nullptr;
 #endif
@@ -163,9 +175,40 @@ Thread::Finish()
 
     DEBUG('t', "Finishing thread \"%s\"\n", GetName());
 
+    // Plancha 2 - Ejercicio 3
+    // If it's joinable, then send a 1 to his parent.
+    if(joinable)
+        channel -> Send(1);
+
     threadToBeDestroyed = currentThread;
     Sleep();  // Invokes `SWITCH`.
     // Not reached.
+}
+
+/// Plancha 2 - Ejercicio 3  
+void 
+Thread::Join()
+{
+    ASSERT(joinable);
+    DEBUG('t', "Thread \"%s\" makes a join on thread \"%s\"\n", currentThread -> GetName(), GetName());
+    
+    int msg;
+    channel -> Receive(&msg); // the parent thread will wait until his child send a message.    
+}
+
+///   Plancha 2 - Ejercicio 4  
+int
+Thread::GetPriority()
+{
+    return priority;
+}
+
+///   Plancha 2 - Ejercicio 4  
+void 
+Thread::SetPriority(int p)
+{
+    ASSERT(p >= 0 && p <= MAX_PRIORITY);
+    priority = p;
 }
 
 /// Relinquish the CPU if any other thread is ready to run.

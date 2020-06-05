@@ -10,6 +10,8 @@
 #ifndef NACHOS_THREADS_SCHEDULER__HH
 #define NACHOS_THREADS_SCHEDULER__HH
 
+// Plancha 2 - Ejercicio 4
+#define MAX_PRIORITY  4 
 
 #include "thread.hh"
 #include "lib/list.hh"
@@ -41,8 +43,9 @@ public:
 
 private:
 
-    // Queue of threads that are ready to run, but not running.
-    List<Thread*> *readyList;
+    // Plancha 2 - Ejercicio 4
+    // Priority queue of threads that are ready to run, but not running.
+    List<Thread*> **readyList;
 
 };
 

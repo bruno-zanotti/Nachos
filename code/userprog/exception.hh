@@ -12,6 +12,7 @@
 /// are called when a user program is executing, and either does a system
 /// call, or generates an addressing or arithmetic exception.
 void SetExceptionHandlers();
-
+// Plancha 3 - Ejercicio 2
+void StartProcess(const char *filename);
 
 #endif

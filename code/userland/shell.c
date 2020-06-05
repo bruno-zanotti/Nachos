@@ -45,7 +45,8 @@ ReadLine(char *buffer, unsigned size, OpenFileId input)
     unsigned i;
 
     for (i = 0; i < size; i++) {
-        Read(&buffer[i], 1, input);
+        /// Plancha 3 - Ejercicio 5
+        Read(&buffer[i], 1, input, 0);
         // TODO: what happens when the input ends?
         if (buffer[i] == '\n') {
             buffer[i] = '\0';
@@ -113,16 +114,22 @@ main(void)
             WriteError("too many arguments.", OUTPUT);
             continue;
         }
+        /// Plancha 3 - Ejercicio 5
+        if(line[0] == '&'){
+            const SpaceId newProc = Exec(line+1, argv, 0);
+        }
+        else{
+            const SpaceId newProc = Exec(line, argv, 1);
+            Join(newProc);
+        }
 
         // Comment and uncomment according to whether command line arguments
         // are given in the system call or not.
-        const SpaceId newProc = Exec(line);
-        //const SpaceId newProc = Exec(line, argv);
+        //const SpaceId newProc = Exec(line);
 
         // TODO: check for errors when calling `Exec`; this depends on how
         //       errors are reported.
 
-        Join(newProc);
         // TODO: is it necessary to check for errors after `Join` too, or
         //       can you be sure that, with the implementation of the system
         //       call handler you made, it will never give an error?; what

@@ -12,6 +12,17 @@
 
 #include <string.h>
 
+// Plancha 3 - Ejercicio 3
+/// return the phiysical address related to a virtual address by a TranslationEntry
+unsigned AddressTranslation(uint32_t virtualAddr,TranslationEntry* pageTable){
+   DEBUG('a',"virtual address %u\n",virtualAddr);
+   unsigned offset = virtualAddr % PAGE_SIZE;
+
+   ///TODO: podría llegar a pasar que se rompa la division, habría que agregar DivRoundDown
+   unsigned virtualPage =  virtualAddr / PAGE_SIZE;
+   DEBUG('a',"virtual page %u and offset %u\n",virtualPage,offset);
+   return (pageTable[virtualPage].physicalPage*PAGE_SIZE) + offset;
+}
 
 /// First, set up the translation from program memory to physical memory.
 /// For now, this is really simple (1:1), since we are only uniprogramming,
@@ -30,7 +41,10 @@ AddressSpace::AddressSpace(OpenFile *executable_file)
     numPages = DivRoundUp(size, PAGE_SIZE);
     size = numPages * PAGE_SIZE;
 
-    ASSERT(numPages <= NUM_PHYS_PAGES);
+
+    // Plancha 3 - Ejercicio 3
+    DEBUG('a', "Cantidad de páginas que ocupa el programa %u\n", numPages);
+    ASSERT(numPages <= mapTable->CountClear());
       // Check we are not trying to run anything too big -- at least until we
       // have virtual memory.
 
@@ -42,8 +56,11 @@ AddressSpace::AddressSpace(OpenFile *executable_file)
     pageTable = new TranslationEntry[numPages];
     for (unsigned i = 0; i < numPages; i++) {
         pageTable[i].virtualPage  = i;
-          // For now, virtual page number = physical page number.
-        pageTable[i].physicalPage = i;
+        // For now, virtual page number = physical page number.
+        // Plancha 3 - Ejercicio 3
+        int pageNumber = mapTable->Find();
+        ASSERT(pageNumber != -1);
+        pageTable[i].physicalPage = pageNumber;
         pageTable[i].valid        = true;
         pageTable[i].use          = false;
         pageTable[i].dirty        = false;
@@ -56,31 +73,67 @@ AddressSpace::AddressSpace(OpenFile *executable_file)
 
     // Zero out the entire address space, to zero the unitialized data
     // segment and the stack segment.
-    memset(mainMemory, 0, size);
+
+    // Plancha 3 - Ejercicio 3
+    for (unsigned i = 0; i < numPages; i++) {
+        unsigned physicalAddr = pageTable[i].physicalPage * PAGE_SIZE;
+        memset(&mainMemory[physicalAddr], 0, PAGE_SIZE);
+    }
 
     // Then, copy in the code and data segments into memory.
     uint32_t codeSize = exe.GetCodeSize();
     uint32_t initDataSize = exe.GetInitDataSize();
+
+    // Plancha 3 - Ejercicio 3
     if (codeSize > 0) {
-        uint32_t virtualAddr = exe.GetCodeAddr();
-        DEBUG('a', "Initializing code segment, at 0x%X, size %u\n",
-              virtualAddr, codeSize);
-        exe.ReadCodeBlock(&mainMemory[virtualAddr], codeSize, 0);
+        uint32_t physicalAddr, virtualAddr = exe.GetCodeAddr();
+        DEBUG('a', "Initializing code segment, at virtualAddr 0x%X, en dec %d, size %u\n", virtualAddr, virtualAddr, codeSize);
+
+        // writtenSize es la cantidad de código escrito en esta iteracion y totalWrittenCode es la cantidad de código escrito hasta ahora
+        uint32_t writtenSize, totalWrittenCode = 0;
+        for (unsigned i = 0; totalWrittenCode < codeSize; i++)
+        {
+            physicalAddr = AddressTranslation(virtualAddr + i * PAGE_SIZE, pageTable);
+            // physicalAddr = pageTable[initVirtualPage++].physicalPage * PAGE_SIZE;
+            DEBUG('a', "direccion fisica, at 0x%X\n",physicalAddr);
+            writtenSize = min(PAGE_SIZE, codeSize - totalWrittenCode);
+            exe.ReadCodeBlock(&mainMemory[physicalAddr], writtenSize, totalWrittenCode);
+            totalWrittenCode += writtenSize;
+        }
+        DEBUG('a', "Code segment copied\n");
     }
+
+    // Plancha 3 - Ejercicio 3
     if (initDataSize > 0) {
-        uint32_t virtualAddr = exe.GetInitDataAddr();
-        DEBUG('a', "Initializing data segment, at 0x%X, size %u\n",
-              virtualAddr, initDataSize);
-        exe.ReadDataBlock(&mainMemory[virtualAddr], initDataSize, 0);
+        uint32_t physicalAddr, virtualAddr = exe.GetInitDataAddr();
+        DEBUG('a', "Initializing data segment, at 0x%X, en dec %d, size %u\n", virtualAddr, virtualAddr, initDataSize);
+
+        // writtenData es la cantidad de código escrito en esta iteracion y totalWrittenData es la cantidad de código escrito hasta ahora
+        uint32_t writtenSize, totalWrittenData = 0;
+        for (unsigned i = 0; totalWrittenData < initDataSize; i++)
+        {
+            physicalAddr = AddressTranslation(virtualAddr + i * PAGE_SIZE, pageTable);
+            // physicalAddr = pageTable[initVirtualPage++].physicalPage * PAGE_SIZE;
+            DEBUG('a', "direccion fisica, at 0x%X\n",physicalAddr);
+            writtenSize = min(PAGE_SIZE, initDataSize - totalWrittenData);
+            exe.ReadDataBlock(&mainMemory[physicalAddr], writtenSize, totalWrittenData);
+            totalWrittenData += writtenSize;
+        }
+        DEBUG('a', "Data segment copied\n");
     }
 
 }
 
 /// Deallocate an address space.
 ///
-/// Nothing for now!
+// Plancha 3 - Ejercicio 3
 AddressSpace::~AddressSpace()
 {
+
+    for (unsigned i = 0; i < numPages; i++)
+    {
+        mapTable->Clear(pageTable[i].physicalPage);
+    }
     delete [] pageTable;
 }
 

@@ -107,7 +107,17 @@ private:
     /// For debugging.
     const char *name;
 
-    // Add other needed fields here.
+    // Plancha 2 - Ejercicio 1
+    // Thread to be blocked.
+    Thread *thread;
+
+    // Plancha 2 - Ejercicio 1
+    // Semaphore with value = 1.
+    Semaphore *semaphore;
+
+    // Plancha 2 - Ejercicio 4
+    // to preserve the original priority of the thread
+    int threadPriority;
 };
 
 // This class defined a “condition variable”.
@@ -165,8 +175,41 @@ private:
 
     const char *name;
 
-    // Other needed fields are to be added here.
+    // Plancha 2 - Ejercicio 1
+    Lock *lock;
+
+    // Plancha 2 - Ejercicio 1
+    // Queue of semaphores of waiting threads
+    List<Semaphore *> *sem_queue;
 };
 
+//   Plancha 2 - ejercicio 2  
+/// This class defines a "Channel".
+class Channel {
+public:
+
+    /// Constructor: set up the Channel as free.
+    Channel(const char *debugName);
+
+    ~Channel();
+
+    /// For debugging.
+    const char *GetName() const;
+
+    /// Operations on the Channel.
+    void Send(int message);
+    void Receive(int *message);
+
+private:
+
+    /// For debugging.
+    const char *name;
+    
+    int *buffer;
+    bool bufferEmpty;
+    Lock *lock;
+    Condition *senders, *receivers;
+    
+};
 
 #endif

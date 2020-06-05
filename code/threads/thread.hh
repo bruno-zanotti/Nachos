@@ -70,6 +70,9 @@ enum ThreadStatus {
     NUM_THREAD_STATUS
 };
 
+/// Plancha 2 - Ejercicio 2
+class Channel;
+
 /// The following class defines a “thread control block” -- which represents
 /// a single thread of execution.
 ///
@@ -94,8 +97,9 @@ private:
 
 public:
 
+    /// Plancha 2 - Ejercicio 3-4
     /// Initialize a `Thread`.
-    Thread(const char *debugName);
+    Thread(const char *debugName, bool IsJoinable=false, int threadPriority = 0);
 
     /// Deallocate a Thread.
     ///
@@ -126,6 +130,15 @@ public:
 
     void Print() const;
 
+    /// Plancha 2 - Ejercicio 3 
+    void Join();
+    
+    /// Plancha 2 - Ejercicio 4
+    int GetPriority();
+
+    /// Plancha 2 - Ejercicio 4
+    void SetPriority(int p);
+
 private:
     // Some of the private data for this class is listed above.
 
@@ -141,6 +154,13 @@ private:
 
     /// Allocate a stack for thread.  Used internally by `Fork`.
     void StackAllocate(VoidFunctionPtr func, void *arg);
+
+    // Plancha 2 - Ejercicio 3
+    bool joinable;
+    Channel *channel;
+    
+    // Plancha 2 - Ejercicio 4
+    int priority;
 
 #ifdef USER_PROGRAM
     /// User-level CPU register state.

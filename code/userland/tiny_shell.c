@@ -15,7 +15,8 @@ main(void)
         Write(prompt, 2, output);
         i = 0;
         do
-            Read(&buffer[i], 1, input);
+            /// Plancha 3 - Ejercicio 5
+            Read(&buffer[i], 1, input, 0);
         while (buffer[i++] != '\n');
 
         buffer[--i] = '\0';

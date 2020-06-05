@@ -44,6 +44,11 @@ SynchDisk *synchDisk;
 
 #ifdef USER_PROGRAM  // Requires either *FILESYS* or *FILESYS_STUB*.
 Machine *machine;  ///< User program memory and registers.
+// Plancha 3 - Ejercicio 3
+SynchConsole *synchConsole;
+Bitmap *mapTable;
+Table <OpenFile*> *filesTable;
+Table <Thread*> *userProgTable;
 #endif
 
 #ifdef NETWORK
@@ -184,6 +189,13 @@ Initialize(int argc, char **argv)
 #ifdef USER_PROGRAM
     Debugger *d = debugUserProg ? new Debugger : nullptr;
     machine = new Machine(d);  // This must come first.
+    // Plancha 3 - Ejercicio 3
+    synchConsole = new SynchConsole(NULL, NULL);
+    mapTable = new Bitmap(NUM_PHYS_PAGES);
+    filesTable = new Table<OpenFile*>;
+    filesTable -> Add(nullptr);
+    filesTable -> Add(nullptr);
+    userProgTable = new Table<Thread*>;
     SetExceptionHandlers();
 #endif
 
@@ -215,6 +227,11 @@ Cleanup()
 
 #ifdef USER_PROGRAM
     delete machine;
+    // Plancha 3 - Ejercicio 3
+    delete synchConsole;
+    delete mapTable;
+    delete filesTable;
+    delete userProgTable;
 #endif
 
 #ifdef FILESYS_NEEDED

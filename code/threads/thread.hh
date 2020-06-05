@@ -99,7 +99,8 @@ public:
 
     /// Plancha 2 - Ejercicio 3-4
     /// Initialize a `Thread`.
-    Thread(const char *debugName, bool IsJoinable=false, int threadPriority = 0);
+    /// TODO: Modificado en plancha 3 pasar a plancha 1,2?
+    Thread(const char *debugName, bool isJoinable=false, int threadPriority = 0);
 
     /// Deallocate a Thread.
     ///
@@ -119,7 +120,8 @@ public:
     void Sleep();
 
     /// The thread is done executing.
-    void Finish();
+    /// Plancha 3 - Ejercicio 2
+    void Finish(int exitStatus = 0);
 
     /// Check if thread has overflowed its stack.
     void CheckOverflow() const;
@@ -131,7 +133,9 @@ public:
     void Print() const;
 
     /// Plancha 2 - Ejercicio 3 
-    void Join();
+    /// Plancha 3 - Ejercicio 2
+    /// return exit status
+    int Join();
     
     /// Plancha 2 - Ejercicio 4
     int GetPriority();

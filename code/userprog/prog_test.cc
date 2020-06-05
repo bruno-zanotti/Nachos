@@ -10,7 +10,9 @@
 
 
 #include "address_space.hh"
-#include "machine/console.hh"
+//#include "machine/console.hh"
+// Plancha 3 - Ejercicio 2
+#include "userprog/synch_console.hh"
 #include "threads/synch.hh"
 #include "threads/system.hh"
 
@@ -44,47 +46,18 @@ StartProcess(const char *filename)
                      // exits by doing the system call `Exit`.
 }
 
-/// Data structures needed for the console test.
-///
-/// Threads making I/O requests wait on a `Semaphore` to delay until the I/O
-/// completes.
 
-static Console   *console;
-static Semaphore *readAvail;
-static Semaphore *writeDone;
 
-/// Console interrupt handlers.
-///
-/// Wake up the thread that requested the I/O.
-
-static void
-ReadAvail(void *arg)
-{
-    readAvail->V();
-}
-
-static void
-WriteDone(void *arg)
-{
-    writeDone->V();
-}
-
-/// Test the console by echoing characters typed at the input onto the
-/// output.
-///
-/// Stop when the user types a `q`.
+// Plancha 3 - Ejercicio 2
 void
 ConsoleTest(const char *in, const char *out)
 {
-    console   = new Console(in, out, ReadAvail, WriteDone, 0);
-    readAvail = new Semaphore("read avail", 0);
-    writeDone = new Semaphore("write done", 0);
-
+    SynchConsole *console = new SynchConsole(in,out);
     for (;;) {
-        readAvail->P();        // Wait for character to arrive.
-        char ch = console->GetChar();
-        console->PutChar(ch);  // Echo it!
-        writeDone->P();        // Wait for write to finish.
+
+        char ch = console -> GetChar();        // Wait for character to arrive.
+        console -> PutChar(ch);                // Echo it!
+
         if (ch == 'q')
             return;  // If `q`, then quit.
     }

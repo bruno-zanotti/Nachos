@@ -205,7 +205,8 @@ private:
     /// For debugging.
     const char *name;
     
-    int *buffer;
+    /// TODO: Modificado en plancha 3 pasar a plancha 1
+    int buffer;
     bool bufferEmpty;
     Lock *lock;
     Condition *senders, *receivers;

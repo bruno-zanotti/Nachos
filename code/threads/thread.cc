@@ -41,7 +41,8 @@ IsThreadStatus(ThreadStatus s)
 ///
 /// * `threadName` is an arbitrary string, useful for debugging.
 /// Plancha 2 - Ejercicio 3-4
-Thread::Thread(const char *threadName, bool IsJoinable, int threadPriority)
+/// TODO: Modificado en plancha 3 pasar a plancha 1,2?
+Thread::Thread(const char *threadName, bool isJoinable, int threadPriority)
 {
     name     = threadName;
     stackTop = nullptr;
@@ -49,7 +50,7 @@ Thread::Thread(const char *threadName, bool IsJoinable, int threadPriority)
     status   = JUST_CREATED;
 
     /// Plancha 2 - Ejercicio 3
-    joinable = IsJoinable;
+    joinable = isJoinable;
     if (joinable)
         channel = new Channel("join-channel");
     else
@@ -79,6 +80,9 @@ Thread::~Thread()
     if (stack != nullptr)
         SystemDep::DeallocBoundedArray((char *) stack,
                                        STACK_SIZE * sizeof *stack);
+    /// TODO: Modificado en plancha 3 pasar a plancha 1
+    if (joinable)
+        delete channel;
 }
 
 /// Invoke `(*func)(arg)`, allowing caller and callee to execute
@@ -167,8 +171,10 @@ Thread::Print() const
 ///
 /// NOTE: we disable interrupts, so that we do not get a time slice between
 /// setting `threadToBeDestroyed`, and going to sleep.
+
+/// Plancha 3 - Ejercicio 2  
 void
-Thread::Finish()
+Thread::Finish(int exitStatus)
 {
     interrupt->SetLevel(INT_OFF);
     ASSERT(this == currentThread);
@@ -176,9 +182,10 @@ Thread::Finish()
     DEBUG('t', "Finishing thread \"%s\"\n", GetName());
 
     // Plancha 2 - Ejercicio 3
+    /// Plancha 3 - Ejercicio 2 
     // If it's joinable, then send a 1 to his parent.
     if(joinable)
-        channel -> Send(1);
+        channel -> Send(exitStatus);
 
     threadToBeDestroyed = currentThread;
     Sleep();  // Invokes `SWITCH`.
@@ -186,7 +193,8 @@ Thread::Finish()
 }
 
 /// Plancha 2 - Ejercicio 3  
-void 
+/// Plancha 3 - Ejercicio 2 
+int 
 Thread::Join()
 {
     ASSERT(joinable);
@@ -194,6 +202,7 @@ Thread::Join()
     
     int msg;
     channel -> Receive(&msg); // the parent thread will wait until his child send a message.    
+    return msg;
 }
 
 ///   Plancha 2 - Ejercicio 4  

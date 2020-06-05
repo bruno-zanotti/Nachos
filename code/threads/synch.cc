@@ -61,10 +61,14 @@ Semaphore::GetName() const
 void
 Semaphore::P()
 {
+    /// TODO: Modificado en plancha 3 pasar a plancha 1
+    DEBUG('s', "Semaphore: %s wants to decrease counter\n", this -> GetName());    
     IntStatus oldLevel = interrupt->SetLevel(INT_OFF);
       // Disable interrupts.
 
     while (value == 0) {  // Semaphore not available.
+        /// TODO: Modificado en plancha 3 pasar a plancha 1
+        DEBUG('s', "Semaphore: %s starts waiting\n", this -> GetName());    
         queue->Append(currentThread);  // So go to sleep.
         currentThread->Sleep();
     }
@@ -81,6 +85,8 @@ Semaphore::P()
 void
 Semaphore::V()
 {
+    /// TODO: Modificado en plancha 3 pasar a plancha 1
+    DEBUG('s', "Semaphore: %s wants to increment counter\n", this -> GetName());    
     IntStatus oldLevel = interrupt->SetLevel(INT_OFF);
 
     Thread *thread = queue->Pop();
@@ -201,7 +207,11 @@ void
 Condition::Signal()
 {
     DEBUG('s', "Thread: %s make a signal\n", currentThread -> GetName());
-    sem_queue -> Pop() -> V();
+    /// TODO: Modificado en plancha 3 pasar a plancha 1
+    Semaphore *s = sem_queue -> Pop();
+    // Si no hay receivers esperando, se rompe (caso joineable nadie hace join)
+    ASSERT(s != nullptr);
+    s -> V();
 }
 
 /// Plancha 2 - Ejercicio 1
@@ -217,7 +227,8 @@ Condition::Broadcast()
 Channel::Channel(const char *debugName)
 {
     name  = debugName;
-    buffer = NULL;
+    /// TODO: Modificado en plancha 3 pasar a plancha 1
+    buffer = 0;
     bufferEmpty = true;
     lock = new Lock("Channel-lock");
     senders = new Condition ("senders-list",lock);
@@ -247,12 +258,18 @@ Channel::Send(int message)
     
     while(!bufferEmpty)     // if the buffer isn't empty
         senders -> Wait();  // the senders wait
-        
-    DEBUG('s', "Thread: %s sends  %d\n", currentThread -> GetName(), message);
 
-    *buffer = message;      // "send" the message
+    /// TODO: Modificado en plancha 3 pasar a plancha 1
+    DEBUG('s', "Thread: %s sends %d\n", currentThread -> GetName(), message);
+
+    /// TODO: Modificado en plancha 3 pasar a plancha 1
+    buffer = message;      // "send" the message
     bufferEmpty = false;    // now the buffer isn't empty
     receivers -> Signal();  // send a signal to a receiver
+    
+    /// TODO: Modificado en plancha 3 pasar a plancha 1
+    while(! bufferEmpty)
+        senders -> Wait(); // Esperar que alguien tome algun mensaje
     
     lock -> Release();     
 }
@@ -266,9 +283,9 @@ Channel::Receive(int *message)
     while(bufferEmpty)          // if the buffer is empty
         receivers -> Wait();    // the receivers wait
     
-    DEBUG('s', "Thread: %s receives %d\n", currentThread -> GetName(), message);
-    
-    message = buffer;           // "receive" the message
+    /// TODO: Modificado en plancha 3 pasar a plancha 1
+    *message = buffer;          // "receive" the message
+    DEBUG('s', "Thread: %s receives %d\n", currentThread -> GetName(), *message);
     bufferEmpty = true;         // now the buffer is empty
     senders -> Signal();        // comunication finished, call a new sender.
     

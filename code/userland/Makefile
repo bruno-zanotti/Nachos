@@ -32,7 +32,7 @@ CPP = $(GCC_PREFIX)cpp
 INCLUDE_DIRS = -I../userprog -I../threads
 CFLAGS       = -std=c99 -G 0 -c $(INCLUDE_DIRS) -mips1 -mfp32 \
                -nostdlib -nostartfiles -nodefaultlibs -fno-pic -mno-abicalls
-/// Plancha 3 - Ejercicio 5
+# Plancha 3 - Ejercicio 5
 PROGRAMS = echo filetest halt matmult shell sort tiny_shell touch cp cat
 
 

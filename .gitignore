@@ -35,3 +35,5 @@
 /code/vmem/nachos
 /code/vmem/swtch.s
 /code/vmem/*.o
+/code/bin/readnoff
+/code/test.txt

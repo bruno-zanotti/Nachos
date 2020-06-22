@@ -45,7 +45,10 @@
 class FileSystem {
 public:
 
-    FileSystem(bool format) {}
+    // Plancha 4 - Ejercicio 4
+    FileSystem(bool format) {
+        fileIndex = 0;
+    }
 
     ~FileSystem() {}
 
@@ -76,6 +79,14 @@ public:
         return SystemDep::Unlink(name) == 0;
     }
 
+    // Plancha 4 - Ejercicio 4
+    int GetFileIndex(){
+        return fileIndex++;
+    }
+
+    // Plancha 4 - Ejercicio 4
+    private:
+        int fileIndex;
 };
 
 #else  // FILESYS

@@ -173,11 +173,11 @@ MMU::RetrievePageEntry(unsigned vpn, TranslationEntry **entry) const
         // Use the TLB.
         // Plancha 4 - Ejercicio 1
         unsigned i;
-        DEBUG('e', "Buscando VPN: '%d'\n", vpn);
+        DEBUG('a', "Buscando VPN: '%d'\n", vpn);
         for (i = 0; i < TLB_SIZE; i++){
-            DEBUG('e', "TLB[%d] = '%d'\n", i, tlb[i].virtualPage);
+            // DEBUG('a', "TLB[%d] = '%d' and valid '%d'\n", i, tlb[i].virtualPage, tlb[i].valid);
             if (tlb[i].valid && tlb[i].virtualPage == vpn) {
-                DEBUG('e', "Page '%d' found\n", vpn);
+                DEBUG('a', "Page '%d' found with physical page %d\n", vpn, tlb[i].physicalPage);
                 *entry = &tlb[i];  // FOUND!
                 stats -> numPageFounds++;
                 return NO_EXCEPTION;
@@ -188,6 +188,8 @@ MMU::RetrievePageEntry(unsigned vpn, TranslationEntry **entry) const
         DEBUG('a', "no valid TLB entry found for this virtual page!\n");
         // Plancha 4 - Ejercicio 2
         stats -> numPageFaults++;
+        // The next access will be always successful
+        stats -> numPageFounds--;
         return PAGE_FAULT_EXCEPTION;  // Really, this is a TLB fault, the
                                       // page may be in memory, but not in
                                       // the TLB.

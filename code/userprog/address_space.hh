@@ -16,6 +16,7 @@
 
 #include "filesys/file_system.hh"
 #include "machine/translation_entry.hh"
+#include "executable.hh"
 
 
 const unsigned USER_STACK_SIZE = 1024;  ///< Increase this as necessary!
@@ -47,8 +48,11 @@ public:
     void SaveState();
     void RestoreState();
     // Plancha 4 - Ejercicio 2
-    void LoadPage(int pageNumber);
-
+    void LoadPage(unsigned vpn);
+    // Plancha 4 - Ejercicio 4
+    void saveInSwap(unsigned vpn);
+    void loadPageFromExe(unsigned vpn);
+    void loadPageFromSwap(unsigned vpn);
 private:
 
     /// Assume linear page table translation for now!
@@ -57,6 +61,14 @@ private:
     /// Number of pages in the virtual address space.
     unsigned numPages;
 
+    // Plancha 4 - Ejercicio 3
+    Executable *exe;
+    // Plancha 4 - Ejercicio 3
+    TranslationEntry *tlbLocal;
+    // Plancha 4 - Ejercicio 4
+    OpenFile *swapFile;
+    // Plancha 4 - Ejercicio 4
+    unsigned physicalPagesAssigned;
 };
 
 

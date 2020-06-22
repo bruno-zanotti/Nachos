@@ -139,6 +139,7 @@ SyscallHandler(ExceptionType _et)
             DEBUG('e', "Program exited with '%u' status.\n",status);
             // Plancha 4 - Ejercicio 2
             stats->Print();
+            delete currentThread->space;
             currentThread->Finish(status);
             break;
         }
@@ -172,7 +173,11 @@ SyscallHandler(ExceptionType _et)
 
             // create address space
             AddressSpace *space = new AddressSpace(executable);
-            delete executable;
+            // Plancha 4 - Ejercicio 3
+            /// TODO: hace falta el ifndef? 
+            #ifndef USE_TLB
+                delete executable;
+            #endif
             
             // create child thread
             Thread *childThread = new Thread(filename,joinable);

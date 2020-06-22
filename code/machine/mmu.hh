@@ -20,7 +20,7 @@ const unsigned PAGE_SIZE = SECTOR_SIZE;  ///< Set the page size equal to the
                                          ///< disk sector size, for
                                          ///< simplicity.
 // Plancha 4 - Ejercicio 1
-const unsigned NUM_PHYS_PAGES = 1024;
+const unsigned NUM_PHYS_PAGES = 32;
 const unsigned MEMORY_SIZE = NUM_PHYS_PAGES * PAGE_SIZE;
 // Plancha 4 - Ejercicio 2
 const unsigned TLB_SIZE = 32;  ///< if there is a TLB, make it small.

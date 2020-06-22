@@ -36,7 +36,10 @@ StartProcess(const char *filename)
     AddressSpace *space = new AddressSpace(executable);
     currentThread->space = space;
 
-    delete executable;
+    // Plancha 4 - Ejercicio 3
+    #ifndef USE_TLB
+        delete executable;
+    #endif
 
     space->InitRegisters();  // Set the initial register values.
     space->RestoreState();   // Load page table register.

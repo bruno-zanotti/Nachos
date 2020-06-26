@@ -68,6 +68,8 @@ private:
     // Plancha 4 - Ejercicio 4
     OpenFile *swapFile;
     // Plancha 4 - Ejercicio 4
+    char swapName[60];
+    // Plancha 4 - Ejercicio 4
     unsigned physicalPagesAssigned;
 };
 

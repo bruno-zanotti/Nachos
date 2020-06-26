@@ -83,6 +83,11 @@ Thread::~Thread()
     /// TODO: Modificado en plancha 3 pasar a plancha 1
     if (joinable)
         delete channel;
+
+    // Plancha 3 - Ejercicio 4
+    #ifdef USER_PROGRAM
+        delete space;
+    #endif
 }
 
 /// Invoke `(*func)(arg)`, allowing caller and callee to execute

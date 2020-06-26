@@ -47,16 +47,11 @@ AddressSpace::AddressSpace(OpenFile *executable_file)
     tlbLocal = new TranslationEntry[TLB_SIZE];
     for (unsigned i = 0; i < TLB_SIZE; i++)
         tlbLocal[i].valid = false;
-    char str[60];
-    // char str[] = "swap";
-    // std::string index = std::to_string(fileSystem->GetFileIndex()); 
-    // strcat(str, index);
-    // strcat(str,".asid");
-    sprintf(str, "swap%d.asid", fileSystem->GetFileIndex());
-    DEBUG('a', "Creating Swap File '%s'\n", str);
-    ASSERT(fileSystem->Create(str, numPages * PAGE_SIZE));
-    // swapFile = new OpenFile("swap.asid");
-    swapFile = fileSystem->Open(str);
+    // Plancha 4 - Ejercicio 4
+    sprintf(swapName, "swap%d.asid", fileSystem->GetFileIndex());
+    DEBUG('a', "Creating Swap File '%s'\n", swapName);
+    ASSERT(fileSystem->Create(swapName, numPages * PAGE_SIZE));
+    swapFile = fileSystem->Open(swapName);
     #endif
 
     // Plancha 3 - Ejercicio 3
@@ -168,8 +163,8 @@ AddressSpace::~AddressSpace()
     // Plancha 4 - Ejercicio 3
     #ifdef USE_TLB
     delete [] tlbLocal;
+    ASSERT(fileSystem->Remove(swapName));
     delete swapFile;
-    /// TODO: hacer remove del swapfile? ASSERT(Remove());
     #endif
     delete exe;
 }
@@ -316,6 +311,7 @@ AddressSpace::loadPageFromExe(unsigned vpn){
     char *mainMemory = machine->GetMMU()->mainMemory;   
     uint32_t codeSize = exe->GetCodeSize();
     uint32_t initDataSize = exe->GetInitDataSize();
+    uint32_t initDataAddr = exe->GetInitDataAddr();
 
     if (vpn * PAGE_SIZE < codeSize){
         //we are in Code
@@ -325,7 +321,7 @@ AddressSpace::loadPageFromExe(unsigned vpn){
     else if (vpn * PAGE_SIZE < codeSize + initDataSize){
         //we are in Data
         DEBUG('a', "Loading data\n");
-        exe->ReadDataBlock(&mainMemory[physicalAddr], PAGE_SIZE, vpn*PAGE_SIZE);
+        exe->ReadDataBlock(&mainMemory[physicalAddr], PAGE_SIZE, vpn*PAGE_SIZE - initDataAddr);
     }
     else {
         //we are in Stack

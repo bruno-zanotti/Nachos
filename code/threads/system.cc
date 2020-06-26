@@ -232,6 +232,9 @@ Cleanup()
     delete mapTable;
     delete filesTable;
     delete userProgTable;
+    // Plancha 4 - Ejercicio 4
+    delete currentThread->space;
+
 #endif
 
 #ifdef FILESYS_NEEDED

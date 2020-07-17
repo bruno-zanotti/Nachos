@@ -36,15 +36,18 @@
 
 MMU::MMU()
 {
+    TLB_index = 0;
     mainMemory = new char [MEMORY_SIZE];
     for (unsigned i = 0; i < MEMORY_SIZE; i++)
           mainMemory[i] = 0;
 
 #ifdef USE_TLB
     tlb = new TranslationEntry[TLB_SIZE];
+    tlbStack = new List <int>;
     for (unsigned i = 0; i < TLB_SIZE; i++)
         tlb[i].valid = false;
     pageTable = nullptr;
+    tlbIndex = 0;
 #else  // Use linear page table.
     tlb = nullptr;
     pageTable = nullptr;
@@ -54,8 +57,10 @@ MMU::MMU()
 MMU::~MMU()
 {
     delete [] mainMemory;
-    if (tlb != nullptr)
+    if (tlb != nullptr){
         delete [] tlb;
+        delete tlbStack;
+    }
 }
 
 /// Read `size` (1, 2, or 4) bytes of virtual memory at `addr` into
@@ -176,10 +181,12 @@ MMU::RetrievePageEntry(unsigned vpn, TranslationEntry **entry) const
         DEBUG('a', "Buscando VPN: '%d'\n", vpn);
         for (i = 0; i < TLB_SIZE; i++){
             // DEBUG('a', "TLB[%d] = '%d' and valid '%d'\n", i, tlb[i].virtualPage, tlb[i].valid);
-            if (tlb[i].valid && tlb[i].virtualPage == vpn) {
+            if (tlb[i].inMemory && tlb[i].valid && tlb[i].virtualPage == vpn) {
                 DEBUG('a', "Page '%d' found with physical page %d\n", vpn, tlb[i].physicalPage);
                 *entry = &tlb[i];  // FOUND!
                 stats -> numPageFounds++;
+                tlbStack -> Remove(i);
+                tlbStack -> Append(i);
                 return NO_EXCEPTION;
             }
         }
@@ -260,3 +267,28 @@ MMU::Translate(unsigned virtAddr, unsigned *physAddr,
     DEBUG_CONT('a', "physical address 0x%X\n", *physAddr);
     return NO_EXCEPTION;
 }
+
+// Plancha 4 - Ejercicio 5
+// Get the least recently used TLB index
+#ifdef USE_TLB
+int 
+MMU::getTLBVictimPage(){
+    for (size_t i = 0; i < TLB_SIZE; i++)
+    {
+        DEBUG('e', "TLB[%d]: %d\n", i, tlb[i].virtualPage);
+        if(! tlb[i].valid)
+            return i;
+    }
+        DEBUG('e', "TLB llena\n");
+    
+    int i = tlbStack -> Pop();
+    return i;
+}
+// #ifdef USE_TLB
+// int 
+// MMU::getTLBVictimPage(){
+//     TLB_index = (TLB_index+1) % TLB_SIZE;
+//     DEBUG('e', "Victim page: %d\n",TLB_index);
+//     return TLB_index;
+// }
+#endif

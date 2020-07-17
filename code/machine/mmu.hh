@@ -12,6 +12,8 @@
 #include "exception_type.hh"
 #include "disk.hh"
 #include "translation_entry.hh"
+#include "lib/list.hh"
+
 
 
 /// Definitions related to the size, and format of user memory.
@@ -23,7 +25,7 @@ const unsigned PAGE_SIZE = SECTOR_SIZE;  ///< Set the page size equal to the
 const unsigned NUM_PHYS_PAGES = 32;
 const unsigned MEMORY_SIZE = NUM_PHYS_PAGES * PAGE_SIZE;
 // Plancha 4 - Ejercicio 2
-const unsigned TLB_SIZE = 32;  ///< if there is a TLB, make it small.
+const unsigned TLB_SIZE = 16;  ///< if there is a TLB, make it small.
 
 
 /// This class simulates an MMU (memory management unit) that can use either
@@ -78,7 +80,10 @@ public:
     TranslationEntry *pageTable;
     unsigned pageTableSize;
     // Plancha 4 - Ejercicio 1
-    unsigned tlbIndex = 0;
+    unsigned tlbIndex;
+
+    // Plancha 4 - Ejercicio 5
+    int getTLBVictimPage();
 
 private:
 
@@ -93,6 +98,12 @@ private:
     /// completed.
     ExceptionType Translate(unsigned virtAddr, unsigned *physAddr,
                             unsigned size, bool writing);
+
+    // Plancha 4 - Ejercicio 5
+    // List of TLB index order by least recently used
+    List<int> *tlbStack;
+
+    unsigned TLB_index;
 };
 
 

@@ -58,6 +58,11 @@ public:
     /// This page is stored in the Swap File
     bool inSwap;
 
+    /// This page is stored in the phisical memory
+    bool inMemory;
+
+    /// This page is stored in TLB
+    bool inTLB;
 };
 
 

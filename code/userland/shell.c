@@ -115,6 +115,8 @@ main(void)
             continue;
         }
         /// Plancha 3 - Ejercicio 5
+        if(line[0] == 'q')
+            Exit(0);
         if(line[0] == '&'){
             const SpaceId newProc = Exec(line+1, argv, 0);
             if (newProc < 0){
@@ -122,8 +124,6 @@ main(void)
                 continue;
             }
         }
-        if(line[0] == 'q')
-            Exit(0);
         else{
             const SpaceId newProc = Exec(line, argv, 1);
             if (newProc < 0){

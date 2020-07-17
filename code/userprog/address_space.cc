@@ -206,7 +206,6 @@ AddressSpace::SaveState()
     // Plancha 4 - Ejercicio 3
     DEBUG('a', "Saving state..\n");
     #ifdef USE_TLB
-        // tlbLocal = machine->GetMMU()->tlb;
     // Plancha 4 - Ejercicio 4    
     // Liberamos la Memoria para el proximo proceso
     for (unsigned i = 0; i < numPages; i++)
@@ -240,9 +239,7 @@ AddressSpace::RestoreState()
 {
     // Plancha 4 - Ejercicio 3
     DEBUG('a', "Restoring state..\n");
-    #ifdef USE_TLB
-        // machine->GetMMU()->tlb = tlbLocal;
-    #else
+    #ifndef USE_TLB
         machine->GetMMU()->pageTable     = pageTable;
         machine->GetMMU()->pageTableSize = numPages;
     #endif
@@ -261,7 +258,6 @@ AddressSpace::LoadPage(unsigned vpn)
     
     // Buscamos un lugar para la página en Memoria
     int pageNumber = -1;
-    // if (! pageTable[vpn].valid){
     if (mapTable->CountClear() > 0 && ! pageTable[vpn].inMemory){
         // Si hay lugar en Memoria y la página no está en ella
         pageNumber = mapTable->Find();
@@ -290,51 +286,11 @@ AddressSpace::LoadPage(unsigned vpn)
         loadPageFromSwap(vpn, pageNumber);    
     }
 
-// ------------------
-
-    // if (! pageTable[vpn].valid){
-    //     // La página no está en la pageTable
-    //     pageNumber = mapTable->Find();
-    //     if (pageNumber == -1){
-    //         // No hay lugar en la memoria física
-    //         // Se envía una página de la memoria física al swap file
-    //         // Save the page in the swapFile
-    //         int pageTableIndex = -1;
-    //         pageTableIndex = getPageTableVictim(victimPageTLB);
-    //         ASSERT(pageTableIndex != -1);
-            
-    //         pageNumber = pageTable[pageTableIndex].physicalPage;
-    //         saveInSwap(pageTableIndex);
-    //         pageTable[pageTableIndex].inMemory = false;
-    //     }
-
-    //     pageTable[vpn].physicalPage = pageNumber;
-    //     loadPageFromExe(vpn);
-    //     saveInSwap(vpn);
-    // }
-    // else if (! pageTable[vpn].inMemory){
-    //     // Se envía una página de la memoria física al swap file
-    //     // Usaremos la dirección Física liberada para la página que estaba en Swap
-    //     // Save the page in the swapFile
-    //     int pageTableIndex = -1;
-    //     pageTableIndex = getPageTableVictim(victimPageTLB);
-    //     ASSERT(pageTableIndex != -1);
-
-    //     pageNumber = pageTable[pageTableIndex].physicalPage;
-    //     pageTable[vpn].physicalPage = pageNumber;
-    //     saveInSwap(pageTableIndex);
-    //     pageTable[pageTableIndex].inMemory = false;
-
-    //     loadPageFromSwap(vpn, pageNumber);
-    // }
-
     // load page in TLB
     pageTable[vpn].valid = true;
     pageTable[vpn].inTLB = true;
 
-    DEBUG('e', "LOAD: TLB[%d]:%d valid:%d inMemory:%d inTLB:%d \n", victimPageTLB,vpn, pageTable[vpn].valid, pageTable[vpn].inMemory, pageTable[vpn].inTLB);
     machine->GetMMU()->tlb[victimPageTLB] = pageTable[vpn];
-    // machine->GetMMU()->tlbIndex = (victimPageTLB+1) % TLB_SIZE;
     DEBUG('e', "Virtual Page %d Loaded Successfully in TLB[%d] with PhysicalPage %d\n", vpn, victimPageTLB, machine->GetMMU()->tlb[victimPageTLB].physicalPage);
 }
 
@@ -392,7 +348,7 @@ AddressSpace::replaceAlgorithm(){
 
     for (unsigned i = 0; i <= numPages; i++)
     {
-        DEBUG('e', "Buscando Página Victima, vpn %d valid %d inMemory %d inTLb %d\n", i, pageTable[i].valid, pageTable[i].inMemory, pageTable[i].inTLB);
+        // DEBUG('e', "Buscando Página Victima, vpn %d valid %d inMemory %d inTLb %d\n", i, pageTable[i].valid, pageTable[i].inMemory, pageTable[i].inTLB);
         if(pageTable[i].valid && pageTable[i].inMemory)
         {
             return i;
@@ -409,7 +365,6 @@ AddressSpace::getPageTableVictim(unsigned victimIndexTLB){
     DEBUG('e', "Looking for Page to replace and save in Swap\n");
 
     // Primero tratamos de usar la página que libera la TLB (si está en Memoria)
-    // unsigned victimIndexTLB = machine->GetMMU()->getTLBVictimPage();
     unsigned victimPageTLB = machine->GetMMU()->tlb[victimIndexTLB].virtualPage;
     if (machine->GetMMU()->tlb[victimIndexTLB].valid){
         pageTable[victimPageTLB].inTLB = false;

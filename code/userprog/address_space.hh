@@ -51,10 +51,15 @@ public:
     void LoadPage(unsigned vpn);
     // Plancha 4 - Ejercicio 4
     void saveInSwap(unsigned vpn);
+
     void loadPageFromExe(unsigned vpn);
+
     void loadPageFromSwap(unsigned vpn, unsigned physicalPage);
+
     unsigned getPageTableVictim(unsigned victimIndexTLB);
+
     unsigned replaceAlgorithm();
+
 private:
 
     /// Assume linear page table translation for now!

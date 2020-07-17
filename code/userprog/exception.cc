@@ -175,7 +175,6 @@ SyscallHandler(ExceptionType _et)
             // create address space
             AddressSpace *space = new AddressSpace(executable);
             // Plancha 4 - Ejercicio 3
-            /// TODO: hace falta el ifndef? 
             #ifndef USE_TLB
                 delete executable;
             #endif

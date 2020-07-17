@@ -22,7 +22,7 @@ const unsigned PAGE_SIZE = SECTOR_SIZE;  ///< Set the page size equal to the
                                          ///< disk sector size, for
                                          ///< simplicity.
 // Plancha 4 - Ejercicio 1
-const unsigned NUM_PHYS_PAGES = 32;
+const unsigned NUM_PHYS_PAGES = 128;
 const unsigned MEMORY_SIZE = NUM_PHYS_PAGES * PAGE_SIZE;
 // Plancha 4 - Ejercicio 2
 const unsigned TLB_SIZE = 16;  ///< if there is a TLB, make it small.
@@ -79,8 +79,6 @@ public:
 
     TranslationEntry *pageTable;
     unsigned pageTableSize;
-    // Plancha 4 - Ejercicio 1
-    unsigned tlbIndex;
 
     // Plancha 4 - Ejercicio 5
     int getTLBVictimPage();
@@ -102,8 +100,6 @@ private:
     // Plancha 4 - Ejercicio 5
     // List of TLB index order by least recently used
     List<int> *tlbStack;
-
-    unsigned TLB_index;
 };
 
 

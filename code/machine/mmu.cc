@@ -36,7 +36,6 @@
 
 MMU::MMU()
 {
-    TLB_index = 0;
     mainMemory = new char [MEMORY_SIZE];
     for (unsigned i = 0; i < MEMORY_SIZE; i++)
           mainMemory[i] = 0;
@@ -47,7 +46,6 @@ MMU::MMU()
     for (unsigned i = 0; i < TLB_SIZE; i++)
         tlb[i].valid = false;
     pageTable = nullptr;
-    tlbIndex = 0;
 #else  // Use linear page table.
     tlb = nullptr;
     pageTable = nullptr;
@@ -180,7 +178,6 @@ MMU::RetrievePageEntry(unsigned vpn, TranslationEntry **entry) const
         unsigned i;
         DEBUG('a', "Buscando VPN: '%d'\n", vpn);
         for (i = 0; i < TLB_SIZE; i++){
-            // DEBUG('a', "TLB[%d] = '%d' and valid '%d'\n", i, tlb[i].virtualPage, tlb[i].valid);
             if (tlb[i].inMemory && tlb[i].valid && tlb[i].virtualPage == vpn) {
                 DEBUG('a', "Page '%d' found with physical page %d\n", vpn, tlb[i].physicalPage);
                 *entry = &tlb[i];  // FOUND!
@@ -273,22 +270,13 @@ MMU::Translate(unsigned virtAddr, unsigned *physAddr,
 #ifdef USE_TLB
 int 
 MMU::getTLBVictimPage(){
+    // LRU algorithm
     for (size_t i = 0; i < TLB_SIZE; i++)
     {
-        DEBUG('e', "TLB[%d]: %d\n", i, tlb[i].virtualPage);
         if(! tlb[i].valid)
             return i;
-    }
-        DEBUG('e', "TLB llena\n");
-    
+    }    
     int i = tlbStack -> Pop();
     return i;
 }
-// #ifdef USE_TLB
-// int 
-// MMU::getTLBVictimPage(){
-//     TLB_index = (TLB_index+1) % TLB_SIZE;
-//     DEBUG('e', "Victim page: %d\n",TLB_index);
-//     return TLB_index;
-// }
 #endif

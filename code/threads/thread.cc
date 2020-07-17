@@ -41,7 +41,6 @@ IsThreadStatus(ThreadStatus s)
 ///
 /// * `threadName` is an arbitrary string, useful for debugging.
 /// Plancha 2 - Ejercicio 3-4
-/// TODO: Modificado en plancha 3 pasar a plancha 1,2?
 Thread::Thread(const char *threadName, bool isJoinable, int threadPriority)
 {
     name     = threadName;
@@ -80,7 +79,6 @@ Thread::~Thread()
     if (stack != nullptr)
         SystemDep::DeallocBoundedArray((char *) stack,
                                        STACK_SIZE * sizeof *stack);
-    /// TODO: Modificado en plancha 3 pasar a plancha 1
     if (joinable)
         delete channel;
 

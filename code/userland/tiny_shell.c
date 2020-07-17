@@ -20,9 +20,9 @@ main(void)
         while (buffer[i++] != '\n');
 
         buffer[--i] = '\0';
-
+        char **argv = {buffer};
         if (i > 0) {
-            newProc = Exec(buffer);
+            newProc = Exec(buffer,argv,1);
             Join(newProc);
         }
     }

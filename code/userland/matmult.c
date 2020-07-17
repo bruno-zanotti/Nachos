@@ -34,7 +34,6 @@ main(void)
         for (j = 0; j < DIM; j++)
             for (k = 0; k < DIM; k++)
                 C[i][j] += A[i][k] * B[k][j];
-
     // And then we are done.
     return C[DIM - 1][DIM - 1];
 }

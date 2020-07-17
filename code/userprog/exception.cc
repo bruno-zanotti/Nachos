@@ -162,9 +162,11 @@ SyscallHandler(ExceptionType _et)
                 DEBUG('e', "args %s.\n", argv[j]);    
             }
 
+            DEBUG('e', "Filename %s.\n", filename);    
             // open filename
             OpenFile *executable = fileSystem->Open(filename);
             if (executable == nullptr) {
+                DEBUG('e', "Entra al if.\n");    
                 DEBUG('e',"Unable to open file %s\n", filename);
                 machine -> WriteRegister(2, -1);
                 break;
@@ -172,7 +174,10 @@ SyscallHandler(ExceptionType _et)
 
             // create address space
             AddressSpace *space = new AddressSpace(executable);
-            delete executable;
+            // Plancha 4 - Ejercicio 3
+            #ifndef USE_TLB
+                delete executable;
+            #endif
             
             // create child thread
             Thread *childThread = new Thread(filename,joinable);
@@ -192,7 +197,7 @@ SyscallHandler(ExceptionType _et)
         // Plancha 3 - Ejercicio 2
         case SC_JOIN: {
             SpaceId id = machine -> ReadRegister(4);
-            DEBUG('e', "SC_JOIN starts.\n");
+            DEBUG('e', "SC_JOIN starts with ID %d.\n", id);
             Thread *thread = userProgTable -> Get(id);
             
             ASSERT(thread != nullptr);

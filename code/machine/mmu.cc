@@ -42,6 +42,7 @@ MMU::MMU()
 
 #ifdef USE_TLB
     tlb = new TranslationEntry[TLB_SIZE];
+    tlbStack = new List <int>;
     for (unsigned i = 0; i < TLB_SIZE; i++)
         tlb[i].valid = false;
     pageTable = nullptr;
@@ -54,8 +55,10 @@ MMU::MMU()
 MMU::~MMU()
 {
     delete [] mainMemory;
-    if (tlb != nullptr)
+    if (tlb != nullptr){
         delete [] tlb;
+        delete tlbStack;
+    }
 }
 
 /// Read `size` (1, 2, or 4) bytes of virtual memory at `addr` into
@@ -173,13 +176,14 @@ MMU::RetrievePageEntry(unsigned vpn, TranslationEntry **entry) const
         // Use the TLB.
         // Plancha 4 - Ejercicio 1
         unsigned i;
-        DEBUG('e', "Buscando VPN: '%d'\n", vpn);
+        DEBUG('a', "Buscando VPN: '%d'\n", vpn);
         for (i = 0; i < TLB_SIZE; i++){
-            DEBUG('e', "TLB[%d] = '%d'\n", i, tlb[i].virtualPage);
-            if (tlb[i].valid && tlb[i].virtualPage == vpn) {
-                DEBUG('e', "Page '%d' found\n", vpn);
+            if (tlb[i].inMemory && tlb[i].valid && tlb[i].virtualPage == vpn) {
+                DEBUG('a', "Page '%d' found with physical page %d\n", vpn, tlb[i].physicalPage);
                 *entry = &tlb[i];  // FOUND!
                 stats -> numPageFounds++;
+                tlbStack -> Remove(i);
+                tlbStack -> Append(i);
                 return NO_EXCEPTION;
             }
         }
@@ -188,6 +192,8 @@ MMU::RetrievePageEntry(unsigned vpn, TranslationEntry **entry) const
         DEBUG('a', "no valid TLB entry found for this virtual page!\n");
         // Plancha 4 - Ejercicio 2
         stats -> numPageFaults++;
+        // The next access will be always successful
+        stats -> numPageFounds--;
         return PAGE_FAULT_EXCEPTION;  // Really, this is a TLB fault, the
                                       // page may be in memory, but not in
                                       // the TLB.
@@ -258,3 +264,19 @@ MMU::Translate(unsigned virtAddr, unsigned *physAddr,
     DEBUG_CONT('a', "physical address 0x%X\n", *physAddr);
     return NO_EXCEPTION;
 }
+
+// Plancha 4 - Ejercicio 5
+// Get the least recently used TLB index
+#ifdef USE_TLB
+int 
+MMU::getTLBVictimPage(){
+    // LRU algorithm
+    for (size_t i = 0; i < TLB_SIZE; i++)
+    {
+        if(! tlb[i].valid)
+            return i;
+    }    
+    int i = tlbStack -> Pop();
+    return i;
+}
+#endif

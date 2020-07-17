@@ -99,7 +99,6 @@ public:
 
     /// Plancha 2 - Ejercicio 3-4
     /// Initialize a `Thread`.
-    /// TODO: Modificado en plancha 3 pasar a plancha 1,2?
     Thread(const char *debugName, bool isJoinable=false, int threadPriority = 0);
 
     /// Deallocate a Thread.

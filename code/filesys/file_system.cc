@@ -353,7 +353,7 @@ CheckBitmaps(const Bitmap *freeMap, const Bitmap *shadowMap)
         DEBUG('f', "Checking sector %u. Original: %u, shadow: %u.\n",
               i, freeMap->Test(i), shadowMap->Test(i));
         error |= CheckForError(freeMap->Test(i) == shadowMap->Test(i),
-                               "Inconsistent bitmap.");
+                               "Inconsistent bitmap.\n");
     }
     return error;
 }
@@ -459,8 +459,8 @@ FileSystem::Check()
     delete shadowMap;
     delete freeMap;
 
-    DEBUG('f', error ? "Filesystem check succeeded.\n"
-                     : "Filesystem check failed.\n");
+    DEBUG('f', error ? "Filesystem check failed.\n"
+                     : "Filesystem check succeeded.\n");
 
     return !error;
 }

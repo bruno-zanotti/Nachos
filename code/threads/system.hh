@@ -16,6 +16,8 @@
 #include "machine/statistics.hh"
 #include "machine/timer.hh"
 
+/// TODO: revisar este numero
+const unsigned MAX_OPEN_FILES = 64;  
 
 /// Initialization and cleanup routines.
 
@@ -43,7 +45,6 @@ extern Timer *timer;                 ///< The hardware alarm clock.
 extern Machine *machine;  			// User program memory and registers.
 extern SynchConsole *synchConsole;  // User program console.
 extern Bitmap *mapTable;
-extern Table <OpenFile*> *filesTable;
 extern Table <Thread*> *userProgTable;
 #endif
 
@@ -55,6 +56,8 @@ extern FileSystem *fileSystem;
 #ifdef FILESYS
 #include "filesys/synch_disk.hh"
 extern SynchDisk *synchDisk;
+#include "filesys/open_file_entry.hh"
+extern OpenFileEntry *systemOpenFiles;
 #endif
 
 #ifdef NETWORK

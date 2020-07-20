@@ -262,7 +262,7 @@ SyscallHandler(ExceptionType _et)
                 machine -> WriteRegister(2, -1); 
                 break;
             }
-            int fid = filesTable -> Add(file);
+            int fid = currentThread -> space -> processOpenFiles -> Add(file);
 
             DEBUG('e',"File '%s' with id '%u' opened.\n",filename,fid);
 
@@ -275,7 +275,7 @@ SyscallHandler(ExceptionType _et)
             // Plancha 3 - Ejercicio 2
             OpenFileId fid = machine -> ReadRegister(4);
             DEBUG('e', "`Close` requested for id %u.\n", fid);
-            filesTable -> Remove(fid);
+            currentThread -> space -> processOpenFiles -> Remove(fid);
             DEBUG('e', "%u closed.\n", fid);
             break;
         }
@@ -301,7 +301,7 @@ SyscallHandler(ExceptionType _et)
 
             }
             else {
-                OpenFile *file = filesTable -> Get(fid);
+                OpenFile *file = currentThread -> space -> processOpenFiles -> Get(fid);
                 if (file == nullptr){
                     DEBUG('e', "READ: file `%s` not found.\n", file);
                     machine -> WriteRegister(2, -1); 
@@ -336,7 +336,7 @@ SyscallHandler(ExceptionType _et)
                   
             }
             else {
-                OpenFile *file = filesTable -> Get(fid);
+                OpenFile *file = currentThread -> space -> processOpenFiles -> Get(fid);
                 if (!file) {
                     DEBUG('e', "Write: file with id '%d' not found.\n", fid);
                     machine->WriteRegister(2, -1);

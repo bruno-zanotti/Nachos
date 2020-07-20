@@ -40,6 +40,7 @@ FileSystem *fileSystem;
 
 #ifdef FILESYS
 SynchDisk *synchDisk;
+OpenFileEntry *systemOpenFiles;
 #endif
 
 #ifdef USER_PROGRAM  // Requires either *FILESYS* or *FILESYS_STUB*.
@@ -47,7 +48,6 @@ Machine *machine;  ///< User program memory and registers.
 // Plancha 3 - Ejercicio 3
 SynchConsole *synchConsole;
 Bitmap *mapTable;
-Table <OpenFile*> *filesTable;
 Table <Thread*> *userProgTable;
 #endif
 
@@ -168,6 +168,9 @@ Initialize(int argc, char **argv)
     scheduler = new Scheduler;  // Initialize the ready queue.
     if (randomYield)            // Start the timer (if needed).
         timer = new Timer(TimerInterruptHandler, 0, randomYield);
+#ifdef FILESYS
+    systemOpenFiles = new OpenFileEntry[MAX_OPEN_FILES];
+#endif
 
     threadToBeDestroyed = nullptr;
 
@@ -192,15 +195,17 @@ Initialize(int argc, char **argv)
     // Plancha 3 - Ejercicio 3
     synchConsole = new SynchConsole(NULL, NULL);
     mapTable = new Bitmap(NUM_PHYS_PAGES);
-    filesTable = new Table<OpenFile*>;
-    filesTable -> Add(nullptr);
-    filesTable -> Add(nullptr);
     userProgTable = new Table<Thread*>;
     SetExceptionHandlers();
 #endif
 
 #ifdef FILESYS
     synchDisk = new SynchDisk("DISK");
+    for(unsigned i; i < MAX_OPEN_FILES; i++){
+        // systemOpenFiles[i].name = "";
+        systemOpenFiles[i].fileID = 0;
+        systemOpenFiles[i].users = 0;
+    }
 #endif
 
 #ifdef FILESYS_NEEDED
@@ -230,7 +235,6 @@ Cleanup()
     // Plancha 3 - Ejercicio 3
     delete synchConsole;
     delete mapTable;
-    delete filesTable;
     delete userProgTable;
     // Plancha 4 - Ejercicio 4
     delete currentThread->space;
@@ -243,6 +247,7 @@ Cleanup()
 
 #ifdef FILESYS
     delete synchDisk;
+    delete systemOpenFiles;
 #endif
 
     delete timer;

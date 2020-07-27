@@ -1,0 +1,23 @@
+Plancha 4 - Ejercicio 2
+
+TLB 4 entradas:
+matmult:
+    Paging: faults 49699 success 659621 miss ratio 7.006570%
+sort:          
+    Paging: faults 1073704 success 21003745 miss ratio 4.863352%
+
+TLB 32 entradas:
+matmult:
+    Paging: faults 80 success 709240 miss ratio 0.011278%
+sort:          
+    Paging: faults 2661 success 22074788 miss ratio 0.012053%
+
+TLB 64 entradas:
+matmult:
+    Paging: faults 46 success 709274 miss ratio 0.006485%
+sort:         
+    Paging: faults 39 success 22077410 miss ratio 0.000177%
+
+Lo normal para un TLB es un miss ratio de entre 0.01 y 1%. 
+Estos resultados son obtenidos en ambos programas a partir de las 32 entradas, 
+por está razón consideramos 32 como el tamaño adecuado.

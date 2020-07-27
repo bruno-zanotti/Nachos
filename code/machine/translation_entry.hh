@@ -54,6 +54,15 @@ public:
     /// This bit is set by the hardware every time the page is modified.
     bool dirty;
 
+    // Plancha 4 - Ejercicio 4
+    /// This page is stored in the Swap File
+    bool inSwap;
+
+    /// This page is stored in the phisical memory
+    bool inMemory;
+
+    /// This page is stored in TLB
+    bool inTLB;
 };
 
 

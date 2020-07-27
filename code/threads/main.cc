@@ -13,7 +13,7 @@
 ///     nachos [-d <debugflags>] [-p] [-rs <random seed #>] [-z]
 ///            [-s] [-x <nachos file>] [-tc <consoleIn> <consoleOut>]
 ///            [-f] [-cp <unix file> <nachos file>] [-pr <nachos file>]
-///            [-rm <nachos file>] [-ls] [-D] [-tf]
+///            [-rm <nachos file>] [-ls] [-D] [-c] [-tf]
 ///            [-n <network reliability>] [-id <machine id>]
 ///            [-tn <other machine id>]
 ///
@@ -42,6 +42,7 @@
 /// * `-rm` -- removes a Nachos file from the file system.
 /// * `-ls` -- lists the contents of the Nachos directory.
 /// * `-D`  -- prints the contents of the entire file system.
+/// * `-c`  -- checks the filesystem integrity.
 /// * `-tf` -- tests the performance of the Nachos file system.
 ///
 /// *NETWORK* options
@@ -155,6 +156,10 @@ main(int argc, char **argv)
         } else if (!strcmp(*argv, "-D")) {   // Print entire filesystem.
             fileSystem->Print();
             printf("\n");
+        } else if (!strcmp(*argv, "-c")) {   // Check the filesystem.
+            bool result = fileSystem->Check();
+            printf("Filesystem check %s.\n",
+                   result ? "succeeded" : "failed");
         } else if (!strcmp(*argv, "-tf"))    // Performance test.
             PerformanceTest();
 #endif

@@ -21,9 +21,11 @@ main(void)
         while (buffer[i++] != '\n');
 
         buffer[--i] = '\0';
+
         char *argv[2];
         argv[0] = buffer;
         argv[1] = NULL;
+
         if (i > 0) {
             newProc = Exec(buffer,argv,1);
             Join(newProc);

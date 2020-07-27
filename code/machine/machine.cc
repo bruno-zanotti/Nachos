@@ -91,23 +91,35 @@ Machine::WriteRegister(unsigned num, int value)
 bool
 Machine::ReadMem(unsigned addr, unsigned size, int *value)
 {
-    ExceptionType e = mmu.ReadMem(addr, size, value);
-    if (e != NO_EXCEPTION) {
+    // Plancha 4 - Ejercicio 1
+    // Try ATTEMPS_NUMBER times to read memory
+    for (size_t i = 0; i < ATTEMPTS_NUMBER; i++){
+        DEBUG('m', "Leyendo en memoria - intento %d\n", i);
+        ExceptionType e = mmu.ReadMem(addr, size, value);
+        if (e == NO_EXCEPTION) {
+            return true;
+        }
         RaiseException(e, addr);
-        return false;
     }
-    return true;
+    ASSERT(false);
+    return false;
 }
 
 bool
 Machine::WriteMem(unsigned addr, unsigned size, int value)
 {
-    ExceptionType e = mmu.WriteMem(addr, size, value);
-    if (e != NO_EXCEPTION) {
+    // Plancha 4 - Ejercicio 1
+    // Try ATTEMPTS_NUMBER times to write memory
+    for (size_t i = 0; i < ATTEMPTS_NUMBER; i++){
+        DEBUG('m', "Escribiendo en memoria - intento %d\n", i);
+        ExceptionType e = mmu.WriteMem(addr, size, value);
+        if (e == NO_EXCEPTION) {
+            return true;
+        }
         RaiseException(e, addr);
-        return false;
     }
-    return true;
+    ASSERT(false);
+    return false;
 }
 
 /// Transfer control to the Nachos kernel from user mode, because the user

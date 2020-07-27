@@ -47,6 +47,9 @@ enum {
     NUM_TOTAL_REGS = 40
 };
 
+// Plancha 4 - Ejercicio 1
+const unsigned ATTEMPTS_NUMBER = 4;  ///< ReadMem and WriteMem number of attemps in case of Page not Loaded yet.
+
 class Instruction;
 
 typedef void (*ExceptionHandler)(ExceptionType);

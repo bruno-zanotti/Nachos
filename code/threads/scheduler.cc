@@ -95,7 +95,8 @@ Scheduler::Run(Thread *nextThread)
 
     Thread *oldThread = currentThread;
 
-#ifdef USER_PROGRAM  // Ignore until running user programs.
+// #ifdef USER_PROGRAM or USE_TLB  // Ignore until running user programs.
+#if defined(USER_PROGRAM) || defined(USE_TLB)
     if (currentThread->space != nullptr) {
         // If this thread is a user program, save the user's CPU registers.
         currentThread->SaveUserState();

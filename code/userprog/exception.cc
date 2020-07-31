@@ -263,7 +263,10 @@ SyscallHandler(ExceptionType _et)
                 break;
             }
             int fid = currentThread -> space -> processOpenFiles -> Add(file);
-
+            #ifdef FILESYS
+            OpenFileEntry *fileEntry = systemOpenFiles->Find(filename);
+            fileEntry->Open();
+            #endif
             DEBUG('e',"File '%s' with id '%u' opened.\n",filename,fid);
 
             machine -> WriteRegister(2, fid); 
@@ -275,7 +278,15 @@ SyscallHandler(ExceptionType _et)
             // Plancha 3 - Ejercicio 2
             OpenFileId fid = machine -> ReadRegister(4);
             DEBUG('e', "`Close` requested for id %u.\n", fid);
-            currentThread -> space -> processOpenFiles -> Remove(fid);
+
+            #ifdef FILESYS
+            const char *filename = currentThread->space->processOpenFiles->Get(fid)->name;
+            OpenFileEntry *fileEntry = systemOpenFiles->Find(filename);
+            fileEntry->Close();
+            #endif
+
+            currentThread->space->processOpenFiles->Remove(fid);
+
             DEBUG('e', "%u closed.\n", fid);
             break;
         }

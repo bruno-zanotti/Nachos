@@ -1,4 +1,4 @@
-/// Data structures to represent the Nachos file system.
+    /// Data structures to represent the Nachos file system.
 ///
 /// A file system is a set of files stored on disk, organized into
 /// directories.  Operations on the file system have to do with “naming” --

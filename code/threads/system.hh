@@ -16,9 +16,6 @@
 #include "machine/statistics.hh"
 #include "machine/timer.hh"
 
-/// TODO: revisar este numero
-const unsigned MAX_OPEN_FILES = 64;  
-
 /// Initialization and cleanup routines.
 
 // Initialization, called before anything else.
@@ -57,7 +54,7 @@ extern FileSystem *fileSystem;
 #include "filesys/synch_disk.hh"
 extern SynchDisk *synchDisk;
 #include "filesys/open_file_entry.hh"
-extern OpenFileEntry *systemOpenFiles;
+extern OpenFileList *systemOpenFiles;
 #endif
 
 #ifdef NETWORK

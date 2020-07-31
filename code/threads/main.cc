@@ -81,6 +81,7 @@ void ThreadTest();
 void Copy(const char *unixFile, const char *nachosFile);
 void Print(const char *file);
 void PerformanceTest(void);
+void SynchRead(void);
 void StartProcess(const char *file);
 void ConsoleTest(const char *in, const char *out);
 void MailTest(int networkID);
@@ -162,6 +163,8 @@ main(int argc, char **argv)
                    result ? "succeeded" : "failed");
         } else if (!strcmp(*argv, "-tf"))    // Performance test.
             PerformanceTest();
+        else if (!strcmp(*argv, "-sr"))
+            SynchRead();
 #endif
 #ifdef NETWORK
         if (!strcmp(*argv, "-tn")) {

@@ -22,9 +22,11 @@
 /// memory while the file is open.
 ///
 /// * `sector` is the location on disk of the file header for this file.
-OpenFile::OpenFile(int sector)
+OpenFile::OpenFile(int sector, const char *_name)
 {
+    name = _name;
     hdr = new FileHeader;
+    systemOpenFiles -> Add(_name);
     hdr->FetchFrom(sector);
     seekPosition = 0;
 }
@@ -110,12 +112,22 @@ OpenFile::ReadAt(char *into, unsigned numBytes, unsigned position)
     ASSERT(into != nullptr);
     ASSERT(numBytes > 0);
 
+    // Plancha 5 - Ejercicio 1
+
+    OpenFileEntry* fileEntry = systemOpenFiles->Find(name);
+    ASSERT(fileEntry != nullptr);
+    DEBUG('f', "ReadAt: %s \n", name);
+    
+    fileEntry->StartReading();
+
     unsigned fileLength = hdr->FileLength();
     unsigned firstSector, lastSector, numSectors;
     char *buf;
 
-    if (position >= fileLength)
+    if (position >= fileLength){
+        fileEntry->StopReading();
         return 0;  // Check request.
+    }
     if (position + numBytes > fileLength)
         numBytes = fileLength - position;
     DEBUG('f', "Reading %u bytes at %u, from file of length %u.\n",
@@ -134,6 +146,7 @@ OpenFile::ReadAt(char *into, unsigned numBytes, unsigned position)
     // Copy the part we want.
     memcpy(into, &buf[position - firstSector * SECTOR_SIZE], numBytes);
     delete [] buf;
+    fileEntry->StopReading();
     return numBytes;
 }
 
@@ -148,8 +161,18 @@ OpenFile::WriteAt(const char *from, unsigned numBytes, unsigned position)
     bool firstAligned, lastAligned;
     char *buf;
 
-    if (position >= fileLength)
+    // Plancha 5 - Ejercicio 1
+
+    OpenFileEntry* fileEntry = systemOpenFiles->Find(name);
+    ASSERT(fileEntry != nullptr);
+    DEBUG('f', "ReadAt: %s \n", name);
+
+    fileEntry->StartWriting();
+
+    if (position >= fileLength){
+        fileEntry->StopWriting();
         return 0;  // Check request.
+    }
     if (position + numBytes > fileLength)
         numBytes = fileLength - position;
     DEBUG('f', "Writing %u bytes at %u, from file of length %u.\n",
@@ -179,6 +202,7 @@ OpenFile::WriteAt(const char *from, unsigned numBytes, unsigned position)
         synchDisk->WriteSector(hdr->ByteToSector(i * SECTOR_SIZE),
                                &buf[(i - firstSector) * SECTOR_SIZE]);
     delete [] buf;
+    fileEntry->StopWriting();
     return numBytes;
 }
 

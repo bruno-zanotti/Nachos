@@ -37,3 +37,5 @@
 /code/vmem/*.o
 /code/bin/readnoff
 /code/test.txt
+code/DISK
+code/userland/fs_test

@@ -9,15 +9,34 @@
 /// enough stack to hold the automatics!
 
 
-#include "syscall.h"
 
+#include "syscall.h"
+// #include "time.h"
 
 int
-main(void)
+main(int argc, char *argv[])
 {
-    Create("test.txt");
+    Write("\nStart: ", 8, CONSOLE_OUTPUT);
+    Write(argv[1], sizeof(argv[1]) - 1, CONSOLE_OUTPUT);
+
     OpenFileId o = Open("test.txt");
-    Write("Hello world\n",12,o);
+    Write("Hello world",12,o);
+    Write(argv[1], sizeof(argv[1]) - 1, o);
+
     Close(o);
+    
+    // sleep(2);
+    Write("\nFinish: ", 8, CONSOLE_OUTPUT);
+    Write(argv[1], sizeof(argv[1]) - 1, CONSOLE_OUTPUT);
     return 0;
 }
+
+// int
+// main(void)
+// {
+//     Create("test.txt");
+//     OpenFileId o = Open("test.txt");
+//     Write("Hello world\n",12,o);
+//     Close(o);
+//     return 0;
+// }

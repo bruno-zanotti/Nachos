@@ -40,7 +40,7 @@ FileSystem *fileSystem;
 
 #ifdef FILESYS
 SynchDisk *synchDisk;
-OpenFileEntry *systemOpenFiles;
+OpenFileList *systemOpenFiles;
 #endif
 
 #ifdef USER_PROGRAM  // Requires either *FILESYS* or *FILESYS_STUB*.
@@ -169,7 +169,7 @@ Initialize(int argc, char **argv)
     if (randomYield)            // Start the timer (if needed).
         timer = new Timer(TimerInterruptHandler, 0, randomYield);
 #ifdef FILESYS
-    systemOpenFiles = new OpenFileEntry[MAX_OPEN_FILES];
+    systemOpenFiles = new OpenFileList();
 #endif
 
     threadToBeDestroyed = nullptr;
@@ -201,11 +201,6 @@ Initialize(int argc, char **argv)
 
 #ifdef FILESYS
     synchDisk = new SynchDisk("DISK");
-    for(unsigned i; i < MAX_OPEN_FILES; i++){
-        // systemOpenFiles[i].name = "";
-        systemOpenFiles[i].fileID = 0;
-        systemOpenFiles[i].users = 0;
-    }
 #endif
 
 #ifdef FILESYS_NEEDED

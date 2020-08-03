@@ -194,18 +194,28 @@ function(void *name_)
         text[j] = name[0];
 
     printf("Thread: %s opens the file\n", name);
+<<<<<<< HEAD
     OpenFile *openFile = fileSystem->Open("test.txt");
+=======
+    OpenFile *openFile = fileSystem->Open("small");
+>>>>>>> 0fc1d10a1dc5c9f9e8c00bb757c430e4f37c5617
     // This is the spring of our discontent.
     for (size_t i = 0; i < 1; i++)
     {
         openFile->WriteAt(text, 5, 0);
         // printf("Thread: %s writes '%s'\n", name, text);
         openFile->ReadAt(buffer, 10, 0);
+<<<<<<< HEAD
         openFile->(buffer, 10, 0);
         printf("Thread: %s reads '%s'\n", name, buffer);
         currentThread->Yield();
     }
     fileSystem->Close("test.txt");
+=======
+        printf("Thread: %s reads '%s'\n", name, buffer);
+        currentThread->Yield();
+    }
+>>>>>>> 0fc1d10a1dc5c9f9e8c00bb757c430e4f37c5617
 
     // // DEBUG('t', "Thread: %s is reading\n", name);
     // printf("Thread: %s is reading\n", name);
@@ -223,6 +233,10 @@ function(void *name_)
 
     printf("!!! Thread `%s` has finished\n", name);
 
+<<<<<<< HEAD
+=======
+    // fileSystem->Remove("small");
+>>>>>>> 0fc1d10a1dc5c9f9e8c00bb757c430e4f37c5617
     // for (size_t i = 0; i < 10; i++)
     // {
     //     fileSystem->close();
@@ -244,6 +258,9 @@ SynchRead()
     }
 
     function((void *) "1");  
+<<<<<<< HEAD
     fileSystem->Remove("test.txt");
+=======
+>>>>>>> 0fc1d10a1dc5c9f9e8c00bb757c430e4f37c5617
 }
 

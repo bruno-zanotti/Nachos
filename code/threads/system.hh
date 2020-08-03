@@ -16,7 +16,6 @@
 #include "machine/statistics.hh"
 #include "machine/timer.hh"
 
-
 /// Initialization and cleanup routines.
 
 // Initialization, called before anything else.
@@ -43,7 +42,6 @@ extern Timer *timer;                 ///< The hardware alarm clock.
 extern Machine *machine;  			// User program memory and registers.
 extern SynchConsole *synchConsole;  // User program console.
 extern Bitmap *mapTable;
-extern Table <OpenFile*> *filesTable;
 extern Table <Thread*> *userProgTable;
 #endif
 
@@ -55,6 +53,8 @@ extern FileSystem *fileSystem;
 #ifdef FILESYS
 #include "filesys/synch_disk.hh"
 extern SynchDisk *synchDisk;
+#include "filesys/open_file_entry.hh"
+extern OpenFileList *systemOpenFiles;
 #endif
 
 #ifdef NETWORK

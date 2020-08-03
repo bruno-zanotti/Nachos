@@ -17,6 +17,7 @@
 #include "filesys/file_system.hh"
 #include "machine/translation_entry.hh"
 #include "executable.hh"
+#include "lib/table.hh"
 
 
 const unsigned USER_STACK_SIZE = 1024;  ///< Increase this as necessary!
@@ -59,6 +60,8 @@ public:
     unsigned getPageTableVictim(unsigned victimIndexTLB);
 
     unsigned replaceAlgorithm();
+
+    Table <OpenFile*> *processOpenFiles;
 
 private:
 

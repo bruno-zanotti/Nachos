@@ -166,7 +166,6 @@ SyscallHandler(ExceptionType _et)
             // open filename
             OpenFile *executable = fileSystem->Open(filename);
             if (executable == nullptr) {
-                DEBUG('e', "Entra al if.\n");    
                 DEBUG('e',"Unable to open file %s\n", filename);
                 machine -> WriteRegister(2, -1);
                 break;
@@ -221,9 +220,14 @@ SyscallHandler(ExceptionType _et)
 
             // Plancha 3 - Ejercicio 2
             DEBUG('e', "`Create` requested for file `%s`.\n", filename);
-            fileSystem -> Create(filename,INIT_FILE_SIZE);
-
+            int success; 
+            success = fileSystem -> Create(filename,INIT_FILE_SIZE);
+            if(!success){
+                machine -> WriteRegister(2, -1);
+                break;
+            }
             DEBUG('e',"%s created\n",filename);
+            machine -> WriteRegister(2, 0);
             break;
         }
 
@@ -262,8 +266,11 @@ SyscallHandler(ExceptionType _et)
                 machine -> WriteRegister(2, -1); 
                 break;
             }
-            int fid = filesTable -> Add(file);
-
+            int fid = currentThread -> space -> processOpenFiles -> Add(file);
+            #ifdef FILESYS
+            OpenFileEntry *fileEntry = systemOpenFiles->Find(filename);
+            fileEntry->Open();
+            #endif
             DEBUG('e',"File '%s' with id '%u' opened.\n",filename,fid);
 
             machine -> WriteRegister(2, fid); 
@@ -275,7 +282,15 @@ SyscallHandler(ExceptionType _et)
             // Plancha 3 - Ejercicio 2
             OpenFileId fid = machine -> ReadRegister(4);
             DEBUG('e', "`Close` requested for id %u.\n", fid);
-            filesTable -> Remove(fid);
+
+            #ifdef FILESYS
+            const char *filename = currentThread->space->processOpenFiles->Get(fid)->name;
+            OpenFileEntry *fileEntry = systemOpenFiles->Find(filename);
+            fileEntry->Close();
+            #endif
+
+            currentThread->space->processOpenFiles->Remove(fid);
+
             DEBUG('e', "%u closed.\n", fid);
             break;
         }
@@ -301,7 +316,7 @@ SyscallHandler(ExceptionType _et)
 
             }
             else {
-                OpenFile *file = filesTable -> Get(fid);
+                OpenFile *file = currentThread -> space -> processOpenFiles -> Get(fid);
                 if (file == nullptr){
                     DEBUG('e', "READ: file `%s` not found.\n", file);
                     machine -> WriteRegister(2, -1); 
@@ -336,7 +351,7 @@ SyscallHandler(ExceptionType _et)
                   
             }
             else {
-                OpenFile *file = filesTable -> Get(fid);
+                OpenFile *file = currentThread -> space -> processOpenFiles -> Get(fid);
                 if (!file) {
                     DEBUG('e', "Write: file with id '%d' not found.\n", fid);
                     machine->WriteRegister(2, -1);

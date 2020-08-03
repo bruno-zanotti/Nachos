@@ -48,6 +48,7 @@
 #include "file_header.hh"
 #include "lib/bitmap.hh"
 #include "machine/disk.hh"
+#include "threads/system.hh"
 
 #include <stdio.h>
 #include <string.h>
@@ -111,8 +112,8 @@ FileSystem::FileSystem(bool format)
         // The file system operations assume these two files are left open
         // while Nachos is running.
 
-        freeMapFile   = new OpenFile(FREE_MAP_SECTOR);
-        directoryFile = new OpenFile(DIRECTORY_SECTOR);
+        freeMapFile   = new OpenFile(FREE_MAP_SECTOR, "Free Map Sector");
+        directoryFile = new OpenFile(DIRECTORY_SECTOR, "Directory Sector");
 
         // Once we have the files “open”, we can write the initial version of
         // each file back to disk.  The directory at this point is completely
@@ -137,8 +138,8 @@ FileSystem::FileSystem(bool format)
         // If we are not formatting the disk, just open the files
         // representing the bitmap and directory; these are left open while
         // Nachos is running.
-        freeMapFile   = new OpenFile(FREE_MAP_SECTOR);
-        directoryFile = new OpenFile(DIRECTORY_SECTOR);
+        freeMapFile   = new OpenFile(FREE_MAP_SECTOR, "Free Map Sector");
+        directoryFile = new OpenFile(DIRECTORY_SECTOR, "Directory Sector");
     }
 }
 
@@ -229,11 +230,15 @@ FileSystem::Open(const char *name)
     Directory *dir = new Directory(NUM_DIR_ENTRIES);
     OpenFile  *openFile = nullptr;
 
+    OpenFileEntry *fileEntry = systemOpenFiles->Find(name);
+    if(fileEntry->closed)
+        return nullptr;
+    
     DEBUG('f', "Opening file %s\n", name);
     dir->FetchFrom(directoryFile);
     int sector = dir->Find(name);
     if (sector >= 0)
-        openFile = new OpenFile(sector);  // `name` was found in directory.
+        openFile = new OpenFile(sector, name);  // `name` was found in directory.
     delete dir;
     return openFile;  // Return null if not found.
 }
@@ -262,6 +267,15 @@ FileSystem::Remove(const char *name)
        delete dir;
        return false;  // file not found
     }
+// -------------------------------------
+    OpenFileEntry *fileEntry = systemOpenFiles->Find(name);
+    // Impedimos que se pueda volver a abrir el archivo
+    fileEntry -> closed = true;
+    // Esperamos a que todos cierren el archivo 
+    fileEntry->Remove();
+// -------------------------------------
+    // Borramos y liberamos espacio
+
     FileHeader *fileH = new FileHeader;
     fileH->FetchFrom(sector);
 

@@ -42,6 +42,12 @@ AddressSpace::AddressSpace(OpenFile *executable_file)
     numPages = DivRoundUp(size, PAGE_SIZE);
     size = numPages * PAGE_SIZE;
 
+    // Table <OpenFile*> *filesTable;
+    processOpenFiles = new Table<OpenFile*>;
+    // Console Input y Output
+    processOpenFiles -> Add(nullptr);
+    processOpenFiles -> Add(nullptr);
+
     #ifdef USE_TLB
     tlbLocal = new TranslationEntry[TLB_SIZE];
     for (unsigned i = 0; i < TLB_SIZE; i++)
@@ -167,6 +173,7 @@ AddressSpace::~AddressSpace()
     delete swapFile;
     #endif
     delete exe;
+    delete processOpenFiles;
 }
 
 /// Set the initial values for the user-level register set.

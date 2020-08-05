@@ -59,17 +59,23 @@ Copy(const char *from, const char *to)
         fclose(fp);
         return;
     }
+    printf("Create terminado\n");
 
     OpenFile *openFile = fileSystem->Open(to);
     ASSERT(openFile != nullptr);
 
+    printf("Open terminado\n");
     // Copy the data in `TRANSFER_SIZE` chunks.
     char *buffer = new char [TRANSFER_SIZE];
     int amountRead;
-    while ((amountRead = fread(buffer, sizeof(char),
-                               TRANSFER_SIZE, fp)) > 0)
+    int itera = 0;
+    while ((amountRead = fread(buffer, sizeof(char),TRANSFER_SIZE, fp)) > 0){
         openFile->Write(buffer, amountRead);
+        itera++;
+        // printf("Copy Escribe:'%s', Iteracion: '%d', Read Amount: '%d'\n",buffer,itera, amountRead);
+    }
     delete [] buffer;
+    printf("Copy terminado\n");
 
     // Close the UNIX and the Nachos files.
     delete openFile;
@@ -194,28 +200,16 @@ function(void *name_)
         text[j] = name[0];
 
     printf("Thread: %s opens the file\n", name);
-<<<<<<< HEAD
     OpenFile *openFile = fileSystem->Open("test.txt");
-=======
-    OpenFile *openFile = fileSystem->Open("small");
->>>>>>> 0fc1d10a1dc5c9f9e8c00bb757c430e4f37c5617
     // This is the spring of our discontent.
     for (size_t i = 0; i < 1; i++)
     {
         openFile->WriteAt(text, 5, 0);
         // printf("Thread: %s writes '%s'\n", name, text);
         openFile->ReadAt(buffer, 10, 0);
-<<<<<<< HEAD
-        openFile->(buffer, 10, 0);
         printf("Thread: %s reads '%s'\n", name, buffer);
         currentThread->Yield();
     }
-    fileSystem->Close("test.txt");
-=======
-        printf("Thread: %s reads '%s'\n", name, buffer);
-        currentThread->Yield();
-    }
->>>>>>> 0fc1d10a1dc5c9f9e8c00bb757c430e4f37c5617
 
     // // DEBUG('t', "Thread: %s is reading\n", name);
     // printf("Thread: %s is reading\n", name);
@@ -233,10 +227,6 @@ function(void *name_)
 
     printf("!!! Thread `%s` has finished\n", name);
 
-<<<<<<< HEAD
-=======
-    // fileSystem->Remove("small");
->>>>>>> 0fc1d10a1dc5c9f9e8c00bb757c430e4f37c5617
     // for (size_t i = 0; i < 10; i++)
     // {
     //     fileSystem->close();
@@ -258,9 +248,6 @@ SynchRead()
     }
 
     function((void *) "1");  
-<<<<<<< HEAD
     fileSystem->Remove("test.txt");
-=======
->>>>>>> 0fc1d10a1dc5c9f9e8c00bb757c430e4f37c5617
 }
 

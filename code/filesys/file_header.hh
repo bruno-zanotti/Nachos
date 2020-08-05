@@ -15,6 +15,7 @@
 
 #include "raw_file_header.hh"
 #include "lib/bitmap.hh"
+#include "directory.hh"
 
 
 /// The following class defines the Nachos "file header" (in UNIX terms, the
@@ -36,7 +37,7 @@ public:
 
     /// Initialize a file header, including allocating space on disk for the
     /// file data.
-    bool Allocate(Bitmap *bitMap, unsigned fileSize);
+    bool Allocate(Bitmap *bitMap, unsigned fileSize, const char *name, Directory *dir);
 
     /// De-allocate this file's data blocks.
     void Deallocate(Bitmap *bitMap);

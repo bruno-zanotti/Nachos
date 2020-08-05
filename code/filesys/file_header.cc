@@ -37,20 +37,53 @@
 /// * `freeMap` is the bit map of free disk sectors.
 /// * `fileSize` is the bit map of free disk sectors.
 bool
-FileHeader::Allocate(Bitmap *freeMap, unsigned fileSize)
+FileHeader::Allocate(Bitmap *freeMap, unsigned fileSize, const char *name, Directory *dir)
 {
     ASSERT(freeMap != nullptr);
+    DEBUG('f', "Allocating File Header with Size %u\n", fileSize);
 
     if (fileSize > MAX_FILE_SIZE)
         return false;
 
     raw.numBytes = fileSize;
     raw.numSectors = DivRoundUp(fileSize, SECTOR_SIZE);
-    if (freeMap->CountClear() < raw.numSectors)
+    raw.nextHeader = -1;
+
+    if (freeMap->CountClear() < raw.numSectors + 1)
         return false;  // Not enough space.
 
-    for (unsigned i = 0; i < raw.numSectors; i++)
+    unsigned i = 0;
+    for (; i < raw.numSectors; i++){
+        if (i>=NUM_DIRECT)
+            break;
         raw.dataSectors[i] = freeMap->Find();
+    }
+    if (i >= NUM_DIRECT){
+        // We need a next header
+        // Look for a sector in the freeMap
+        raw.nextHeader = freeMap->Find();
+
+        // Update directory
+        char nextHeaderName[60];
+        sprintf(nextHeaderName, "%s nextH", name);
+        if (!dir->Add(nextHeaderName, raw.nextHeader))
+            return false;  // No space in directory.
+
+        // Create next header
+        FileHeader *nextH = new FileHeader;
+        bool success = nextH->Allocate(freeMap, fileSize - NUM_DIRECT * SECTOR_SIZE, nextHeaderName, dir);
+        raw.numBytes = fileSize - (fileSize - NUM_DIRECT * SECTOR_SIZE);
+        raw.numSectors = NUM_DIRECT;
+
+        if(!success)
+            return false;
+
+        // Write the changes
+        nextH->WriteBack(raw.nextHeader);
+    }
+
+    DEBUG('f', "File Header successfully Allocated with Size '%u' and Next Header '%d'\n", raw.numBytes, raw.nextHeader);
+
     return true;
 }
 
@@ -61,10 +94,17 @@ void
 FileHeader::Deallocate(Bitmap *freeMap)
 {
     ASSERT(freeMap != nullptr);
+    DEBUG('f', "Deallocating File Header\n");
 
-    for (unsigned i = 0; i < raw.numSectors; i++) {
+    unsigned i = 0;
+    for (; i < raw.numSectors && i < NUM_DIRECT; i++) {
         ASSERT(freeMap->Test(raw.dataSectors[i]));  // ought to be marked!
         freeMap->Clear(raw.dataSectors[i]);
+    }
+    if (i >= NUM_DIRECT){
+        FileHeader *nextH = new FileHeader;
+        nextH->FetchFrom(raw.nextHeader);
+        nextH->Deallocate(freeMap);
     }
 }
 
@@ -74,6 +114,7 @@ FileHeader::Deallocate(Bitmap *freeMap)
 void
 FileHeader::FetchFrom(unsigned sector)
 {
+    DEBUG('f', "Fetch from sector %u\n", sector);
     synchDisk->ReadSector(sector, (char *) &raw);
 }
 
@@ -83,6 +124,7 @@ FileHeader::FetchFrom(unsigned sector)
 void
 FileHeader::WriteBack(unsigned sector)
 {
+    DEBUG('f', "File Header Writing Back in sector %u with nextheader %i and syze %u and syzeof %u\n", sector, raw.nextHeader, raw.numBytes, sizeof(raw));
     synchDisk->WriteSector(sector, (char *) &raw);
 }
 
@@ -95,6 +137,14 @@ FileHeader::WriteBack(unsigned sector)
 unsigned
 FileHeader::ByteToSector(unsigned offset)
 {
+    DEBUG('f', "File Header getting Byte Sector with Offset: '%d' Sector Number: '%d' \n", offset, offset / SECTOR_SIZE);
+    // Si el offset es mayor que el tamaño del header se busca en el proximo header
+    if(offset / SECTOR_SIZE >= NUM_DIRECT){
+        DEBUG('f', "Termino primer hdr \n");
+        FileHeader *nextH = new FileHeader;
+        nextH->FetchFrom(raw.nextHeader);
+        return nextH->ByteToSector(offset - SECTOR_SIZE * NUM_DIRECT);
+    }
     return raw.dataSectors[offset / SECTOR_SIZE];
 }
 
@@ -102,7 +152,14 @@ FileHeader::ByteToSector(unsigned offset)
 unsigned
 FileHeader::FileLength() const
 {
-    return raw.numBytes;
+    DEBUG('f', "File Header getting File Length\n");
+    unsigned numBytes = raw.numBytes;
+    if(raw.nextHeader != -1){
+        FileHeader *nextH = new FileHeader;
+        nextH->FetchFrom(raw.nextHeader);
+        return numBytes + nextH->FileLength();
+    }
+    return numBytes;
 }
 
 /// Print the contents of the file header, and the contents of all the data

@@ -165,7 +165,7 @@ OpenFile::WriteAt(const char *from, unsigned numBytes, unsigned position)
 
     OpenFileEntry* fileEntry = systemOpenFiles->Find(name);
     ASSERT(fileEntry != nullptr);
-    DEBUG('f', "ReadAt: %s \n", name);
+    DEBUG('f', "WriteAt: %s \n", name);
 
     fileEntry->StartWriting();
 
@@ -181,7 +181,7 @@ OpenFile::WriteAt(const char *from, unsigned numBytes, unsigned position)
     firstSector = DivRoundDown(position, SECTOR_SIZE);
     lastSector  = DivRoundDown(position + numBytes - 1, SECTOR_SIZE);
     numSectors  = 1 + lastSector - firstSector;
-
+    DEBUG('f', "First sector: %u Last sector: %u num sectors: %u.\n",firstSector, lastSector, numSectors);
     buf = new char [numSectors * SECTOR_SIZE];
 
     firstAligned = position == firstSector * SECTOR_SIZE;

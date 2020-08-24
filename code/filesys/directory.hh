@@ -52,6 +52,9 @@ public:
     /// Remove a file from the directory.
     bool Remove(const char *name);
 
+    /// Make the directory bigger.
+    bool Expand();
+
     /// Print the names of all the files in the directory.
     void List() const;
 

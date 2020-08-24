@@ -191,47 +191,26 @@ PerformanceTest()
 void
 function(void *name_)
 {
-    char *name = (char *) name_;
+    // char *buffer = new char [64];
+    // // Create a Nachos file of the same length.
+    // // if (!fileSystem->Create(to, fileLength)) {  // Create Nachos file.
+    // //     printf("Copy: could not create output file %s\n", to);
+    // //     fclose(fp);
+    // //     return;
+    // // }
 
-    char *buffer = new char [64];
-
-    char text[100];
-    for(int j=0;j<100;j++)
-        text[j] = name[0];
-
-    printf("Thread: %s opens the file\n", name);
-    OpenFile *openFile = fileSystem->Open("test.txt");
-    // This is the spring of our discontent.
-    for (size_t i = 0; i < 1; i++)
-    {
-        openFile->WriteAt(text, 5, 0);
-        // printf("Thread: %s writes '%s'\n", name, text);
-        openFile->ReadAt(buffer, 10, 0);
-        printf("Thread: %s reads '%s'\n", name, buffer);
-        currentThread->Yield();
-    }
-
-    // // DEBUG('t', "Thread: %s is reading\n", name);
-    // printf("Thread: %s is reading\n", name);
-    // for (unsigned num = 0; num < 20; num++) {
-    //     int numBytes = openFile->Read(buffer, 10);
-    //     // DEBUG('t', "Thread: %s reads caracter %s\n", name, buffer);
-    //     printf("Thread: %s reads caracter '%s'\n", name, buffer);
-    //     currentThread->Yield();
-    // }
-
-    // for (unsigned num = 0; num < 10; num++) {
-    //     printf("*** Thread `%s` is running: iteration %u\n", name, num);
-    //     currentThread->Yield();
-    // }
-
-    printf("!!! Thread `%s` has finished\n", name);
-
-    // for (size_t i = 0; i < 10; i++)
+    // OpenFile *openFile = fileSystem->Open("test.txt");
+    // // This is the spring of our discontent.
+    // for (size_t i = 0; i < 1; i++)
     // {
-    //     fileSystem->close();
+    //     openFile->WriteAt(text, 5, 0);
+    //     // printf("Thread: %s writes '%s'\n", name, text);
+    //     openFile->ReadAt(buffer, 10, 0);
+    //     printf("Thread: %s reads '%s'\n", name, buffer);
+    //     currentThread->Yield();
     // }
-    
+
+    // printf("Test has finished\n", name);
     
 }
 

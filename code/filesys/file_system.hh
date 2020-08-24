@@ -111,6 +111,9 @@ public:
     /// Delete a file (UNIX `unlink`).
     bool Remove(const char *name);
 
+    /// Increase the file size (UNIX `unlink`).
+    bool Expand(FileHeader *hdr, unsigned sector, unsigned size);
+
     /// List all the files in the file system.
     void List();
 

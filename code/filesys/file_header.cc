@@ -29,57 +29,69 @@
 #include <ctype.h>
 #include <stdio.h>
 
+// Initialize a fresh file header for a newly created file.
+FileHeader::FileHeader()
+{
+    DEBUG('f', "Creating File Header\n");
+    raw.numBytes = 0;
+    raw.numSectors = 0;
+    raw.nextHeader = -1;
+    nextHeader = nullptr;
+}
 
-/// Initialize a fresh file header for a newly created file.  Allocate data
-/// blocks for the file out of the map of free disk blocks.  Return false if
-/// there are not enough free blocks to accomodate the new file.
+/// Allocate data blocks for the file out of the map of free disk blocks.
+/// Return false if there are not enough free blocks to accomodate the new file.
 ///
 /// * `freeMap` is the bit map of free disk sectors.
 /// * `fileSize` is the bit map of free disk sectors.
 bool
-FileHeader::Allocate(Bitmap *freeMap, unsigned fileSize, const char *name, Directory *dir)
+FileHeader::Allocate(unsigned size, Bitmap *freeMap)
 {
     ASSERT(freeMap != nullptr);
-    DEBUG('f', "Allocating File Header with Size %u\n", fileSize);
 
-    if (fileSize > MAX_FILE_SIZE)
+    DEBUG('f', "Allocating Size '%u'\n", size);
+    // If there is defined a Next Header
+    if(raw.nextHeader != -1)
+        return nextHeader->Allocate(size, freeMap);
+
+    if (size > MAX_FILE_SIZE)
         return false;
 
-    raw.numBytes = fileSize;
-    raw.numSectors = DivRoundUp(fileSize, SECTOR_SIZE);
-    raw.nextHeader = -1;
+    unsigned newSectors = DivRoundUp(size, SECTOR_SIZE);
 
-    if (freeMap->CountClear() < raw.numSectors + 1)
+    if (freeMap->CountClear() < newSectors)
         return false;  // Not enough space.
 
-    unsigned i = 0;
-    for (; i < raw.numSectors; i++){
-        if (i>=NUM_DIRECT)
-            break;
+    unsigned oldSectors = raw.numSectors;
+    unsigned i = oldSectors;
+
+    for (; i < newSectors + oldSectors && i < NUM_DIRECT; i++)
         raw.dataSectors[i] = freeMap->Find();
-    }
-    if (i >= NUM_DIRECT){
-        // We need a next header
+
+    unsigned allocatedSectors = (i - oldSectors);
+    raw.numSectors = allocatedSectors + oldSectors;
+    raw.numBytes = raw.numSectors * SECTOR_SIZE;
+
+    // Check if not enough Sectors in this Header for the required size
+    int remainingSize = size - (allocatedSectors * SECTOR_SIZE);
+    // int remainingSize = size - ((newSectors + oldSectors - raw.numSectors) * SECTOR_SIZE);
+
+    if (remainingSize > 0){
+        // We need a next header for the remaining size
         // Look for a sector in the freeMap
         raw.nextHeader = freeMap->Find();
-
-        // Update directory
-        char nextHeaderName[60];
-        sprintf(nextHeaderName, "%s nextH", name);
-        if (!dir->Add(nextHeaderName, raw.nextHeader))
-            return false;  // No space in directory.
+        if(raw.nextHeader == -1)
+            return false;
 
         // Create next header
-        FileHeader *nextH = new FileHeader;
-        bool success = nextH->Allocate(freeMap, fileSize - NUM_DIRECT * SECTOR_SIZE, nextHeaderName, dir);
-        raw.numBytes = fileSize - (fileSize - NUM_DIRECT * SECTOR_SIZE);
-        raw.numSectors = NUM_DIRECT;
+        nextHeader = new FileHeader();
+        bool success = nextHeader->Allocate(remainingSize, freeMap);
 
         if(!success)
             return false;
 
         // Write the changes
-        nextH->WriteBack(raw.nextHeader);
+        nextHeader->WriteBack(raw.nextHeader);
     }
 
     DEBUG('f', "File Header successfully Allocated with Size '%u' and Next Header '%d'\n", raw.numBytes, raw.nextHeader);
@@ -96,16 +108,14 @@ FileHeader::Deallocate(Bitmap *freeMap)
     ASSERT(freeMap != nullptr);
     DEBUG('f', "Deallocating File Header\n");
 
-    unsigned i = 0;
-    for (; i < raw.numSectors && i < NUM_DIRECT; i++) {
+    for (unsigned i = 0; i < raw.numSectors; i++) {
         ASSERT(freeMap->Test(raw.dataSectors[i]));  // ought to be marked!
         freeMap->Clear(raw.dataSectors[i]);
     }
-    if (i >= NUM_DIRECT){
-        FileHeader *nextH = new FileHeader;
-        nextH->FetchFrom(raw.nextHeader);
-        nextH->Deallocate(freeMap);
-    }
+    if(raw.nextHeader != -1)
+        nextHeader->Deallocate(freeMap);
+
+    DEBUG('f', "File Header deallocated\n");
 }
 
 /// Fetch contents of file header from disk.
@@ -116,6 +126,11 @@ FileHeader::FetchFrom(unsigned sector)
 {
     DEBUG('f', "Fetch from sector %u\n", sector);
     synchDisk->ReadSector(sector, (char *) &raw);
+    if(raw.nextHeader != -1){
+        nextHeader = new FileHeader();
+        nextHeader->FetchFrom(raw.nextHeader);
+    }
+    DEBUG('f', "Fetch from sector %u complete!\n", sector);
 }
 
 /// Write the modified contents of the file header back to disk.
@@ -124,8 +139,11 @@ FileHeader::FetchFrom(unsigned sector)
 void
 FileHeader::WriteBack(unsigned sector)
 {
-    DEBUG('f', "File Header Writing Back in sector %u with nextheader %i and syze %u and syzeof %u\n", sector, raw.nextHeader, raw.numBytes, sizeof(raw));
+    DEBUG('f', "File Header Writing Back in sector %u with NextHeader %i and Size %u\n", sector, raw.nextHeader, raw.numBytes);
     synchDisk->WriteSector(sector, (char *) &raw);
+    if(raw.nextHeader != -1)
+        nextHeader->WriteBack(raw.nextHeader);
+    DEBUG('f', "File Header Writing Back in sector %u with NextHeader %i and Size %u complete!\n", sector, raw.nextHeader, raw.numBytes);
 }
 
 /// Return which disk sector is storing a particular byte within the file.
@@ -137,15 +155,15 @@ FileHeader::WriteBack(unsigned sector)
 unsigned
 FileHeader::ByteToSector(unsigned offset)
 {
-    DEBUG('f', "File Header getting Byte Sector with Offset: '%d' Sector Number: '%d' \n", offset, offset / SECTOR_SIZE);
-    // Si el offset es mayor que el tamaño del header se busca en el proximo header
+    DEBUG('f', "File Header getting Byte Sector with Offset: '%d' dataSectors: '%d' \n", offset, offset / SECTOR_SIZE);
+    // Si el offset es mayor que el tamaño del header se busca en el next header
     if(offset / SECTOR_SIZE >= NUM_DIRECT){
-        DEBUG('f', "Termino primer hdr \n");
-        FileHeader *nextH = new FileHeader;
-        nextH->FetchFrom(raw.nextHeader);
-        return nextH->ByteToSector(offset - SECTOR_SIZE * NUM_DIRECT);
+        ASSERT(nextHeader != nullptr);
+        return nextHeader->ByteToSector(offset - SECTOR_SIZE * NUM_DIRECT);
     }
+    DEBUG('f', "File Header getting Byte Sector with Offset: '%d' dataSectors: '%d' complete!\n", offset, offset / SECTOR_SIZE);
     return raw.dataSectors[offset / SECTOR_SIZE];
+
 }
 
 /// Return the number of bytes in the file.
@@ -153,13 +171,12 @@ unsigned
 FileHeader::FileLength() const
 {
     DEBUG('f', "File Header getting File Length\n");
-    unsigned numBytes = raw.numBytes;
-    if(raw.nextHeader != -1){
-        FileHeader *nextH = new FileHeader;
-        nextH->FetchFrom(raw.nextHeader);
-        return numBytes + nextH->FileLength();
-    }
-    return numBytes;
+    
+    if(raw.nextHeader != -1)
+        return raw.numBytes + nextHeader->FileLength();
+
+    DEBUG('f', "File Header final Lenght %u\n", raw.numBytes);
+    return raw.numBytes;
 }
 
 /// Print the contents of the file header, and the contents of all the data
@@ -194,6 +211,9 @@ FileHeader::Print(const char *title)
         printf("\n");
     }
     delete [] data;
+
+    if(raw.nextHeader != -1)
+        nextHeader->Print("Next Header");
 }
 
 const RawFileHeader *

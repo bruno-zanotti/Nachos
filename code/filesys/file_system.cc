@@ -83,8 +83,8 @@ FileSystem::FileSystem(bool format)
     if (format) {
         Bitmap     *freeMap = new Bitmap(NUM_SECTORS);
         Directory  *dir     = new Directory(NUM_DIR_ENTRIES);
-        FileHeader *mapH    = new FileHeader;
-        FileHeader *dirH    = new FileHeader;
+        FileHeader *mapH    = new FileHeader();
+        FileHeader *dirH    = new FileHeader();
 
         DEBUG('f', "Formatting the file system.\n");
 
@@ -96,8 +96,8 @@ FileSystem::FileSystem(bool format)
         // Second, allocate space for the data blocks containing the contents
         // of the directory and bitmap files.  There better be enough space!
 
-        ASSERT(mapH->Allocate(freeMap, FREE_MAP_FILE_SIZE, nullptr, nullptr));
-        ASSERT(dirH->Allocate(freeMap, DIRECTORY_FILE_SIZE, nullptr, nullptr));
+        ASSERT(mapH->Allocate(FREE_MAP_FILE_SIZE, freeMap));
+        ASSERT(dirH->Allocate(DIRECTORY_FILE_SIZE, freeMap));
 
         // Flush the bitmap and directory `FileHeader`s back to disk.
         // We need to do this before we can `Open` the file, since open reads
@@ -198,8 +198,8 @@ FileSystem::Create(const char *name, unsigned initialSize)
         else if (!dir->Add(name, sector))
             success = false;  // No space in directory.
         else {
-            FileHeader *h = new FileHeader;
-            success = h->Allocate(freeMap, initialSize, name, dir);
+            FileHeader *h = new FileHeader();
+            success = h->Allocate(initialSize, freeMap);
               // Fails if no space on disk for data.
             if (success) {
                 // Everything worked, flush all changes back to disk.
@@ -292,6 +292,20 @@ FileSystem::Remove(const char *name)
     delete dir;
     delete freeMap;
     return true;
+}
+
+bool
+FileSystem::Expand(FileHeader *hdr, unsigned sector, unsigned size)
+{
+    Bitmap *freeMap = new Bitmap(NUM_SECTORS);
+    freeMap->FetchFrom(freeMapFile);
+    bool success = hdr->Allocate(size, freeMap);
+    if (success) {
+        // Everything worked, flush all changes back to disk.
+        hdr->WriteBack(sector);
+        freeMap->WriteBack(freeMapFile);
+    }
+    return success;
 }
 
 /// List all the files in the file system directory.

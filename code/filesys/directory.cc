@@ -24,9 +24,11 @@
 #include "directory_entry.hh"
 #include "file_header.hh"
 #include "lib/utility.hh"
+#include "file_system.hh"
 
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
 
 
 /// Initialize a directory; initially, the directory is completely empty.  If
@@ -56,8 +58,10 @@ void
 Directory::FetchFrom(OpenFile *file)
 {
     ASSERT(file != nullptr);
-    file->ReadAt((char *) raw.table,
-                 raw.tableSize * sizeof (DirectoryEntry), 0);
+    file->ReadAt((char *) &raw.tableSize, 1, 0);
+    ASSERT(raw.tableSize > 0);
+    raw.table = (DirectoryEntry*) realloc(raw.table, raw.tableSize * sizeof(DirectoryEntry));
+    file->ReadAt((char *) raw.table, raw.tableSize * sizeof (DirectoryEntry), 1);
 }
 
 /// Write any modifications to the directory back to disk.
@@ -67,8 +71,8 @@ void
 Directory::WriteBack(OpenFile *file)
 {
     ASSERT(file != nullptr);
-    file->WriteAt((char *) raw.table,
-                  raw.tableSize * sizeof (DirectoryEntry), 0);
+    file->WriteAt((char *) &raw.tableSize, 1, 0);
+    file->WriteAt((char *) raw.table, raw.tableSize * sizeof (DirectoryEntry), 1);
 }
 
 /// Look up file name in directory, and return its location in the table of
@@ -124,7 +128,15 @@ Directory::Add(const char *name, int newSector)
             raw.table[i].sector = newSector;
             return true;
         }
+    if (Expand()){
+        unsigned lastIndex = raw.tableSize - 1;
+        raw.table[lastIndex].inUse = true;
+        strncpy(raw.table[lastIndex].name, name, FILE_NAME_MAX_LEN);
+        raw.table[lastIndex].sector = newSector;
+        return true;
+    }
     return false;  // no space.  Fix when we have extensible files.
+    
 }
 
 /// Remove a file name from the directory.   Return true if successful;
@@ -140,6 +152,21 @@ Directory::Remove(const char *name)
     if (i == -1)
         return false;  // name not in directory
     raw.table[i].inUse = false;
+    return true;
+}
+
+/// Make the directory bigger.
+/// Return true if successful;
+bool 
+Directory::Expand(){
+    DirectoryEntry *newTable = new DirectoryEntry [raw.tableSize+1];
+    for (unsigned i = 0; i < raw.tableSize; i++)
+        newTable[i] = raw.table[i];
+    
+    newTable[raw.tableSize].inUse = false;
+
+    raw.tableSize ++; 
+    raw.table = newTable;
     return true;
 }
 

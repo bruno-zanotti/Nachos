@@ -37,6 +37,8 @@
 
 
 #include "open_file.hh"
+#include "directory_entry.hh"
+#include "path.hh"
 
 
 #ifdef FILESYS_STUB  // Temporarily implement file system calls as calls to
@@ -52,7 +54,7 @@ public:
 
     ~FileSystem() {}
 
-    bool Create(const char *name, unsigned initialSize)
+    bool Create(const char *name, unsigned initialSize, bool isDirectory)
     {
         ASSERT(name != nullptr);
 
@@ -103,13 +105,16 @@ public:
     ~FileSystem();
 
     /// Create a file (UNIX `creat`).
-    bool Create(const char *name, unsigned initialSize);
+    bool Create(const char *name, unsigned initialSize, bool isDirectory);
 
     /// Open a file (UNIX `open`).
     OpenFile *Open(const char *name);
 
     /// Delete a file (UNIX `unlink`).
     bool Remove(const char *name);
+
+    /// Increase the file size (UNIX `unlink`).
+    bool Expand(FileHeader *hdr, unsigned sector, unsigned size);
 
     /// List all the files in the file system.
     void List();
@@ -119,6 +124,10 @@ public:
 
     /// List all the files and their contents.
     void Print();
+
+    DirectoryEntry FindPath(Path *path, const char *name);
+
+    bool Cd(const char *newPath);
 
 private:
     OpenFile *freeMapFile;  ///< Bit map of free disk blocks, represented as a

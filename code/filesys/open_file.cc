@@ -22,11 +22,13 @@
 /// memory while the file is open.
 ///
 /// * `sector` is the location on disk of the file header for this file.
-OpenFile::OpenFile(int sector, const char *_name)
+OpenFile::OpenFile(int _sector, const char *_name)
 {
+    DEBUG('f', "Creating new OpenFile in sector:'%d, with name: '%s'\n",_sector, _name);
     name = _name;
     hdr = new FileHeader;
     systemOpenFiles -> Add(_name);
+    sector = _sector;
     hdr->FetchFrom(sector);
     seekPosition = 0;
 }
@@ -119,7 +121,6 @@ OpenFile::ReadAt(char *into, unsigned numBytes, unsigned position)
     DEBUG('f', "ReadAt: %s \n", name);
     
     fileEntry->StartReading();
-
     unsigned fileLength = hdr->FileLength();
     unsigned firstSector, lastSector, numSectors;
     char *buf;
@@ -169,12 +170,24 @@ OpenFile::WriteAt(const char *from, unsigned numBytes, unsigned position)
 
     fileEntry->StartWriting();
 
-    if (position >= fileLength){
-        fileEntry->StopWriting();
-        return 0;  // Check request.
+    // if (position >= fileLength){
+    //     DEBUG('f', "WriteAt: position dio '%u' \n", position);
+    //     DEBUG('f', "WriteAt: length dio '%u' \n", fileLength);
+    //     fileEntry->StopWriting();
+    //     return 0;  // Check request.
+    // }
+    if (position + numBytes > fileLength){
+        unsigned remainingBytes = (position + numBytes) - fileLength;
+        DEBUG('f', "WriteAt: remainingBytes '%u' \n", remainingBytes);
+        bool success = fileSystem->Expand(hdr, sector, remainingBytes);
+        DEBUG('f', "WriteAt: expand dio '%u' \n", success);
+        if (!success){
+            fileEntry->StopWriting();
+            return 0;
+        }
+        // fileLength += remainingBytes;
+        // numBytes = fileLength - position;
     }
-    if (position + numBytes > fileLength)
-        numBytes = fileLength - position;
     DEBUG('f', "Writing %u bytes at %u, from file of length %u.\n",
           numBytes, position, fileLength);
 
@@ -211,4 +224,9 @@ unsigned
 OpenFile::Length() const
 {
     return hdr->FileLength();
+}
+
+FileHeader *
+OpenFile::GetHeader(){
+    return hdr;
 }

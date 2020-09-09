@@ -114,11 +114,15 @@ public:
     // the UNIX idiom -- `lseek` to end of file, `tell`, `lseek` back).
     unsigned Length() const;
 
+    FileHeader *GetHeader();
+
     const char *name;
 
   private:
 
     FileHeader *hdr;  ///< Header for this file.
+
+    unsigned sector;
     
     unsigned seekPosition;  ///< Current position within the file.
 };

@@ -55,7 +55,7 @@ AddressSpace::AddressSpace(OpenFile *executable_file)
     // Plancha 4 - Ejercicio 4
     sprintf(swapName, "swap%d.asid", fileSystem->GetFileIndex());
     DEBUG('a', "Creating Swap File '%s'\n", swapName);
-    ASSERT(fileSystem->Create(swapName, numPages * PAGE_SIZE));
+    ASSERT(fileSystem->Create(swapName, numPages * PAGE_SIZE, false));
     swapFile = fileSystem->Open(swapName);
     #endif
 
@@ -124,7 +124,7 @@ AddressSpace::AddressSpace(OpenFile *executable_file)
         {
             physicalAddr = AddressTranslation(virtualAddr + i * PAGE_SIZE, pageTable);
             DEBUG('a', "direccion fisica, at 0x%X\n",physicalAddr);
-            writtenSize = min(PAGE_SIZE, codeSize - totalWrittenCode);
+            writtenSize = _min(PAGE_SIZE, codeSize - totalWrittenCode);
             DEBUG('a', "Loading 2 ARGS '%d' '%d' '%d'\n",physicalAddr, writtenSize, totalWrittenCode);
             exe->ReadCodeBlock(&mainMemory[physicalAddr], writtenSize, totalWrittenCode);
             totalWrittenCode += writtenSize;
@@ -143,7 +143,7 @@ AddressSpace::AddressSpace(OpenFile *executable_file)
         {
             physicalAddr = AddressTranslation(virtualAddr + i * PAGE_SIZE, pageTable);
             DEBUG('a', "direccion fisica, at 0x%X\n",physicalAddr);
-            writtenSize = min(PAGE_SIZE, initDataSize - totalWrittenData);
+            writtenSize = _min(PAGE_SIZE, initDataSize - totalWrittenData);
             exe->ReadDataBlock(&mainMemory[physicalAddr], writtenSize, totalWrittenData);
             totalWrittenData += writtenSize;
         }

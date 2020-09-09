@@ -220,8 +220,8 @@ SyscallHandler(ExceptionType _et)
 
             // Plancha 3 - Ejercicio 2
             DEBUG('e', "`Create` requested for file `%s`.\n", filename);
-            int success; 
-            success = fileSystem -> Create(filename,INIT_FILE_SIZE);
+            int success;
+            success = fileSystem->Create(filename,INIT_FILE_SIZE, false);
             if(!success){
                 machine -> WriteRegister(2, -1);
                 break;

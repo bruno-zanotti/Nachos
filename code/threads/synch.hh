@@ -108,7 +108,6 @@ private:
     const char *name;
 
     // Plancha 2 - Ejercicio 1
-    // Thread to be blocked.
     Thread *thread;
 
     // Plancha 2 - Ejercicio 1

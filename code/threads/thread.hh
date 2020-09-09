@@ -44,8 +44,10 @@
 #ifdef USER_PROGRAM
 #include "machine/machine.hh"
 #include "userprog/address_space.hh"
+#endif 
+#ifdef FILESYS
+#include "filesys/path.hh"
 #endif
-
 
 /// CPU register state to be saved on context switch.
 ///
@@ -183,6 +185,27 @@ public:
 
     // User code this thread is running.
     AddressSpace *space;
+#endif
+
+#ifdef FILESYS
+public:
+    ///Returns the directory where thread is running.
+    OpenFile *GetCurrentDir();
+    
+    ///Sets the directory to the thread that is running. 
+    void SetCurrentDir(OpenFile *newDir);
+
+    ///Returns the path to the working directory.
+    Path GetCurrentPath();
+
+    ///Sets the path to the working directory.
+    void SetCurrentPath(Path newPath);
+
+private:
+    /// Directory where the thread is running.
+    OpenFile *currentDirectory;
+    /// Path to the working directory.
+    Path currentPath;
 #endif
 };
 

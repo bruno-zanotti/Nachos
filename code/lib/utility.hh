@@ -17,7 +17,7 @@
 
 /// Miscellaneous useful routines.
 // Plancha 3 - Ejercicio 2
-#define min(a, b)  (((a) < (b)) ? (a) : (b))
+#define _min(a, b)  (((a) < (b)) ? (a) : (b))
 #define max(a, b)  (((a) > (b)) ? (a) : (b))
 
 /// Typedef for host memory references, expressed in numerical (integer)

@@ -114,6 +114,8 @@ public:
     // the UNIX idiom -- `lseek` to end of file, `tell`, `lseek` back).
     unsigned Length() const;
 
+    FileHeader *GetHeader();
+
     const char *name;
 
   private:

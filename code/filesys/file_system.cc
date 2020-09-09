@@ -49,6 +49,8 @@
 #include "lib/bitmap.hh"
 #include "machine/disk.hh"
 #include "threads/system.hh"
+#include "directory_node.hh"
+#include "path.hh"
 
 #include <stdio.h>
 #include <string.h>
@@ -68,6 +70,8 @@ static const unsigned NUM_DIR_ENTRIES = 10;
 static const unsigned DIRECTORY_FILE_SIZE = sizeof (DirectoryEntry)
                                             * NUM_DIR_ENTRIES;
 
+#ifdef FILESYS
+
 /// Initialize the file system.  If `format == true`, the disk has nothing on
 /// it, and we need to initialize the disk to contain an empty directory, and
 /// a bitmap of free sectors (with almost but not all of the sectors marked
@@ -81,10 +85,10 @@ FileSystem::FileSystem(bool format)
 {
     DEBUG('f', "Initializing the file system.\n");
     if (format) {
-        Bitmap     *freeMap = new Bitmap(NUM_SECTORS);
-        Directory  *dir     = new Directory(NUM_DIR_ENTRIES);
-        FileHeader *mapH    = new FileHeader();
-        FileHeader *dirH    = new FileHeader();
+        Bitmap     *freeMap     = new Bitmap(NUM_SECTORS);
+        Directory  *dir         = new Directory();
+        FileHeader *mapH        = new FileHeader();
+        FileHeader *dirH        = new FileHeader();
 
         DEBUG('f', "Formatting the file system.\n");
 
@@ -175,18 +179,32 @@ FileSystem::~FileSystem()
 /// * `name` is the name of file to be created.
 /// * `initialSize` is the size of file to be created.
 bool
-FileSystem::Create(const char *name, unsigned initialSize)
+FileSystem::Create(const char *name, unsigned initialSize, bool isDirectory)
 {
     ASSERT(name != nullptr);
 
     DEBUG('f', "Creating file %s, size %u\n", name, initialSize);
 
-    Directory *dir = new Directory(NUM_DIR_ENTRIES);
-    dir->FetchFrom(directoryFile);
+    Path path = currentThread->GetCurrentPath();
+    DEBUG('f', "Creating file %s, size %u  -> 1.5\n", name, initialSize);
+    path.Merge(name);
+    DEBUG('f', "Creating file %s, size %u  -> 1.75\n", name, initialSize);
+    std::string file = path.Split();
+    DEBUG('f', "Creating file %s, size %u  -> 2\n", name, initialSize);
+
+    DirectoryEntry entry = FindPath(&path, name);
+    if (entry.sector < 0 || !entry.isDirectory)
+        return false;
+    DEBUG('f', "Creating file %s, size %u  -> 2.5\n", name, initialSize);
+
+    OpenFile *dirFile = new OpenFile(entry.sector, name);
+    Directory *dir = new Directory();
+    dir->FetchFrom(dirFile);
 
     bool success;
 
-    if (dir->Find(name) != -1)
+    DEBUG('f', "Creating file %s, size %u  -> 2.8\n", name, initialSize);
+    if (dir->Find(file.c_str()) != -1)
         success = false;  // File is already in directory.
     else {
         Bitmap *freeMap = new Bitmap(NUM_SECTORS);
@@ -195,17 +213,23 @@ FileSystem::Create(const char *name, unsigned initialSize)
           // Find a sector to hold the file header.
         if (sector == -1)
             success = false;  // No free block for file header.
-        else if (!dir->Add(name, sector))
+        else if (!dir->Add(file.c_str(), sector, isDirectory))
             success = false;  // No space in directory.
         else {
+            DEBUG('f', "Creating file %s, size %u       -> 3\n", name, initialSize);
             FileHeader *h = new FileHeader();
             success = h->Allocate(initialSize, freeMap);
               // Fails if no space on disk for data.
             if (success) {
-                // Everything worked, flush all changes back to disk.
+                // Everything worked, flush all changes back to disk..
+                dirFile->GetHeader()->WriteBack(entry.sector);
                 h->WriteBack(sector);
-                dir->WriteBack(directoryFile);
+                dir->WriteBack(dirFile);
                 freeMap->WriteBack(freeMapFile);
+                if (isDirectory) {
+                    Directory *newDir = new Directory();
+                    newDir->WriteBack(new OpenFile(sector, nullptr));
+                }
             }
             delete h;
         }
@@ -227,19 +251,25 @@ FileSystem::Open(const char *name)
 {
     ASSERT(name != nullptr);
 
-    Directory *dir = new Directory(NUM_DIR_ENTRIES);
+    Path path = currentThread->GetCurrentPath();
+    path.Merge(name);
+    DirectoryEntry entry = FindPath(&path, name);
+
     OpenFile  *openFile = nullptr;
+
+    if (entry.isDirectory)
+        return openFile;
+
 
     OpenFileEntry *fileEntry = systemOpenFiles->Find(name);
     if(fileEntry->closed)
         return nullptr;
     
     DEBUG('f', "Opening file %s\n", name);
-    dir->FetchFrom(directoryFile);
-    int sector = dir->Find(name);
+
+    int sector = entry.sector;
     if (sector >= 0)
         openFile = new OpenFile(sector, name);  // `name` was found in directory.
-    delete dir;
     return openFile;  // Return null if not found.
 }
 
@@ -260,13 +290,15 @@ FileSystem::Remove(const char *name)
 {
     ASSERT(name != nullptr);
 
-    Directory *dir = new Directory(NUM_DIR_ENTRIES);
-    dir->FetchFrom(directoryFile);
-    int sector = dir->Find(name);
-    if (sector == -1) {
-       delete dir;
+    Path path = currentThread->GetCurrentPath();
+    path.Merge(name);
+
+    DirectoryEntry dirEntry = FindPath(&path, name);
+
+    if (dirEntry.sector < 0) {
        return false;  // file not found
     }
+
 // -------------------------------------
     OpenFileEntry *fileEntry = systemOpenFiles->Find(name);
     // Impedimos que se pueda volver a abrir el archivo
@@ -275,6 +307,16 @@ FileSystem::Remove(const char *name)
     fileEntry->Remove();
 // -------------------------------------
     // Borramos y liberamos espacio
+
+    std::string file = path.Split();
+    int dirSector = FindPath(&path, name).sector;
+
+    OpenFile *dirFile = new OpenFile(dirSector, nullptr);
+    Directory *dir = new Directory();
+    dir->FetchFrom(dirFile);
+    int sector = dir->Find(file.c_str());
+    dir->Remove(file.c_str());
+    dir->WriteBack(dirFile);
 
     FileHeader *fileH = new FileHeader;
     fileH->FetchFrom(sector);
@@ -312,11 +354,12 @@ FileSystem::Expand(FileHeader *hdr, unsigned sector, unsigned size)
 void
 FileSystem::List()
 {
-    Directory *dir = new Directory(NUM_DIR_ENTRIES);
-
-    dir->FetchFrom(directoryFile);
+    Path path = currentThread->GetCurrentPath();
+    DirectoryEntry entry = FindPath(&path, "files list");
+    if (entry.sector < 0) return;
+    Directory *dir = new Directory();
+    dir->FetchFrom(new OpenFile(entry.sector, nullptr));
     dir->List();
-    delete dir;
 }
 
 static bool
@@ -475,7 +518,7 @@ FileSystem::Check()
 
     Bitmap *freeMap = new Bitmap(NUM_SECTORS);
     freeMap->FetchFrom(freeMapFile);
-    Directory *dir = new Directory(NUM_DIR_ENTRIES);
+    Directory *dir = new Directory(NUM_DIR_ENTRIES, nullptr);
     const RawDirectory *rdir = dir->GetRaw();
     dir->FetchFrom(directoryFile);
     error |= CheckDirectory(rdir, shadowMap);
@@ -505,7 +548,7 @@ FileSystem::Print()
     FileHeader *bitH    = new FileHeader;
     FileHeader *dirH    = new FileHeader;
     Bitmap     *freeMap = new Bitmap(NUM_SECTORS);
-    Directory  *dir     = new Directory(NUM_DIR_ENTRIES);
+    Directory  *dir     = new Directory(NUM_DIR_ENTRIES, nullptr);
 
     printf("--------------------------------\n");
     bitH->FetchFrom(FREE_MAP_SECTOR);
@@ -529,3 +572,41 @@ FileSystem::Print()
     delete freeMap;
     delete dir;
 }
+
+DirectoryEntry
+FileSystem::FindPath(Path *path, const char *name)
+{
+    DirectoryEntry entry = { true, DIRECTORY_SECTOR, "", true };
+    
+    Directory *dir = new Directory();
+
+    for (auto& part : path->List()) {
+        OpenFile *file = new OpenFile(entry.sector, name);
+        dir->FetchFrom(file);
+        int index = dir->FindIndex(part.c_str());
+        if (index < 0) {
+            DEBUG('f', "Can't find file: %s\n", part.c_str());
+            entry.sector = -1;
+            return entry;
+        }
+        entry = dir->GetRaw()->table[index];
+    }
+
+    return entry;
+}
+
+bool
+FileSystem::Cd(const char *newPath)
+{
+    Path path = currentThread->GetCurrentPath();
+    path.Merge(newPath);
+    DirectoryEntry entry = FindPath(&path, "cd");
+    
+    if (entry.sector < 0 || !entry.isDirectory)
+        return false;
+
+    currentThread->SetCurrentPath(path);
+    return true;
+}
+
+#endif

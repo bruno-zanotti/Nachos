@@ -225,3 +225,8 @@ OpenFile::Length() const
 {
     return hdr->FileLength();
 }
+
+FileHeader *
+OpenFile::GetHeader(){
+    return hdr;
+}

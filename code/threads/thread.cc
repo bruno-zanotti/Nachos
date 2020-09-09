@@ -61,6 +61,9 @@ Thread::Thread(const char *threadName, bool isJoinable, int threadPriority)
 #ifdef USER_PROGRAM
     space    = nullptr;
 #endif
+#ifdef FILESYS
+    currentDirectory = nullptr;
+#endif
 }
 
 /// De-allocate a thread.
@@ -86,6 +89,11 @@ Thread::~Thread()
     #ifdef USER_PROGRAM
         delete space;
     #endif
+
+    #ifdef FILESYS
+        delete currentDirectory;
+    #endif
+
 }
 
 /// Invoke `(*func)(arg)`, allowing caller and callee to execute
@@ -366,4 +374,31 @@ Thread::RestoreUserState()
         machine->WriteRegister(i, userRegisters[i]);
 }
 
+#endif
+
+#ifdef FILESYS
+Path 
+Thread::GetCurrentPath(){
+    return currentPath;
+}
+
+void
+Thread::SetCurrentPath(Path newPath){
+    ASSERT(currentThread == this);
+    currentPath = newPath;
+}
+
+OpenFile *
+Thread::GetCurrentDir(){
+    return currentDirectory;
+}
+
+void
+Thread::SetCurrentDir(OpenFile *newDir){
+    ASSERT(currentThread == this);
+    if(newDir != nullptr){
+        delete currentDirectory;
+        currentDirectory = newDir;
+    }
+}
 #endif

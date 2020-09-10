@@ -178,8 +178,30 @@ void
 PerformanceTest()
 {
     printf("Starting file system performance test:\n");
-    fileSystem->Create("dir",0,true);
+    fileSystem->Cd("./");
+    fileSystem->Create("d1",0,true);
+    // printf("\n>> Root:\n");
+    fileSystem->List();
+    fileSystem->Cd("d1");
+    // printf("\n>> Dir_1:\n");
+    fileSystem->List();
+    fileSystem->Create("f1",0,false);
+    // printf("\n>> Dir_1:\n");
+    fileSystem->List();
+    fileSystem->Cd("../");
+    fileSystem->Create("./d2",0,true);
+    fileSystem->Cd("./d2");
+    fileSystem->Create("./f2",0,false);
+    // printf("\n>> Dir_2:\n");
+    fileSystem->List();
+    fileSystem->Cd("../");
+    // printf("\n>> Root:\n");
+    fileSystem->List();
+    fileSystem->Remove("./d2");
+    // printf("\n>> Root:\n");
+    fileSystem->List();
     printf("Todo ok\n");
+
     // stats->Print();
     // FileWrite();
     // FileRead();

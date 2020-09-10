@@ -49,7 +49,6 @@
 #include "lib/bitmap.hh"
 #include "machine/disk.hh"
 #include "threads/system.hh"
-#include "directory_node.hh"
 #include "path.hh"
 
 #include <stdio.h>
@@ -228,7 +227,7 @@ FileSystem::Create(const char *name, unsigned initialSize, bool isDirectory)
                 freeMap->WriteBack(freeMapFile);
                 if (isDirectory) {
                     Directory *newDir = new Directory();
-                    newDir->WriteBack(new OpenFile(sector, nullptr));
+                    newDir->WriteBack(new OpenFile(sector, name));
                 }
             }
             delete h;
@@ -311,7 +310,7 @@ FileSystem::Remove(const char *name)
     std::string file = path.Split();
     int dirSector = FindPath(&path, name).sector;
 
-    OpenFile *dirFile = new OpenFile(dirSector, nullptr);
+    OpenFile *dirFile = new OpenFile(dirSector, name);
     Directory *dir = new Directory();
     dir->FetchFrom(dirFile);
     int sector = dir->Find(file.c_str());
@@ -356,9 +355,11 @@ FileSystem::List()
 {
     Path path = currentThread->GetCurrentPath();
     DirectoryEntry entry = FindPath(&path, "files list");
+    DEBUG('f', "Listing files with sector %u was already marked.\n", entry.sector);
     if (entry.sector < 0) return;
     Directory *dir = new Directory();
-    dir->FetchFrom(new OpenFile(entry.sector, nullptr));
+    dir->FetchFrom(new OpenFile(entry.sector, "list files"));
+    printf(">> ~%s:\n",path.GetPath().c_str());
     dir->List();
 }
 

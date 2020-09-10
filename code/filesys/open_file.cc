@@ -24,6 +24,7 @@
 /// * `sector` is the location on disk of the file header for this file.
 OpenFile::OpenFile(int _sector, const char *_name)
 {
+    ASSERT(_name != nullptr);
     DEBUG('f', "Creating new OpenFile in sector:'%d, with name: '%s'\n",_sector, _name);
     name = _name;
     hdr = new FileHeader;

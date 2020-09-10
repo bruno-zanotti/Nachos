@@ -92,11 +92,13 @@ int
 Directory::FindIndex(const char *_name)
 {
     ASSERT(_name != nullptr);
-
+    DEBUG('f', "Finding index of file: %s\n", _name);
     for (unsigned i = 0; i < raw.tableSize; i++)
-        if (raw.table[i].inUse
-              && !strncmp(raw.table[i].name, _name, FILE_NAME_MAX_LEN))
+        if (raw.table[i].inUse && !strncmp(raw.table[i].name, _name, FILE_NAME_MAX_LEN)){
+            DEBUG('f', "Found index of file: %s, index: %u\n", _name, i);
             return i;
+        }
+    DEBUG('f', "Index of file: %s not found\n", _name);
     return -1;  // name not in directory
 }
 
@@ -126,6 +128,7 @@ bool
 Directory::Add(const char *_name, int newSector, bool isDirectory)
 {
     ASSERT(_name != nullptr);
+    DEBUG('f', "Adding file: %s in directory in sector %d and isDirectory:%d\n", _name, newSector, isDirectory);
 
     if (FindIndex(_name) != -1)
         return false;
@@ -133,6 +136,7 @@ Directory::Add(const char *_name, int newSector, bool isDirectory)
     for (unsigned i = 0; i < raw.tableSize; i++)
         if (!raw.table[i].inUse) {
             raw.table[i].inUse = true;
+            raw.table[i].isDirectory = isDirectory;
             strncpy(raw.table[i].name, _name, FILE_NAME_MAX_LEN);
             raw.table[i].sector = newSector;
             return true;
@@ -140,6 +144,7 @@ Directory::Add(const char *_name, int newSector, bool isDirectory)
     if (Expand()){
         unsigned lastIndex = raw.tableSize - 1;
         raw.table[lastIndex].inUse = true;
+        raw.table[lastIndex].isDirectory = isDirectory;
         strncpy(raw.table[lastIndex].name, _name, FILE_NAME_MAX_LEN);
         raw.table[lastIndex].sector = newSector;
         return true;
